@@ -1,6 +1,15 @@
 import { Pageable } from './pageable.type';
 
+export interface Links {
+    first?: string;
+    previous?: string;
+    current: string;
+    next?: string;
+    last?: string;
+}
+
 export interface Page<T extends object> {
-    content: T[];
-    pageable: Pageable;
+    data: T[];
+    meta: Pageable;
+    links: Links;
 }

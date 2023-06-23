@@ -1,10 +1,10 @@
-import { Page, Pageable } from '../types';
+import { Links, Page, Pageable } from '../types';
 import { ApiProperty } from '@nestjs/swagger';
 import { defaultPageable } from '../constants';
 
 export class PageableResponse<T extends object> implements Page<T> {
     @ApiProperty()
-    readonly content!: T[];
+    readonly data!: T[];
 
     @ApiProperty({
         type: 'object',
@@ -14,10 +14,22 @@ export class PageableResponse<T extends object> implements Page<T> {
             offset: { type: 'integer', minimum: 0 },
             unpaged: { type: 'boolean' },
             totalPages: { type: 'integer', minimum: 0 },
-            totalElements: { type: 'integer', minimum: 0 },
-            sort: { type: 'array', items: { type: 'object' } }
+            totalItems: { type: 'integer', minimum: 0 },
+            sortBy: { type: 'array', items: { type: 'object' } }
         },
         example: defaultPageable
     })
-    readonly pageable!: Pageable;
+    readonly meta!: Pageable;
+
+    @ApiProperty({
+        type: 'object',
+        properties: {
+            first: { type: 'string', nullable: true },
+            previous: { type: 'string', nullable: true },
+            current: { type: 'string', nullable: true },
+            next: { type: 'string', nullable: true },
+            last: { type: 'string', nullable: true }
+        }
+    })
+    readonly links!: Links;
 }

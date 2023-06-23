@@ -24,7 +24,7 @@ export function ApiPageable(pageableOptions: PageableOptions & { dto?: Function 
         ApiOkResponse({
             description: 'Page of items',
             schema: {
-                allOf: [{ $ref: getSchemaPath(PageableResponse) }, { properties: { content: { type: 'array', items: dto ? { $ref: getSchemaPath(dto) } : undefined } } }]
+                allOf: [{ $ref: getSchemaPath(PageableResponse) }, { properties: { data: { type: 'array', items: dto ? { $ref: getSchemaPath(dto) } : undefined } } }]
             }
         })
     );

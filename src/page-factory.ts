@@ -34,10 +34,10 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
     async create(): Promise<TPage> {
         const { select = '*', sortable, relations, where, alias } = this._config;
         const queryBuilder = this.repo.createQueryBuilder(alias);
-        let { page, offset, size, sort } = this.pageable;
+        let { currentPage, offset, size, sortBy } = this.pageable;
         const { unpaged, limit } = this.pageable;
         if (unpaged) {
-            page = 0;
+            currentPage = 0;
             offset = 0;
             size = 0;
         }
@@ -54,36 +54,46 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
             queryBuilder.where(where);
         }
 
-        let totalElements = await queryBuilder.getCount();
+        let totalItems = await queryBuilder.getCount();
 
         if (limit !== undefined) {
             queryBuilder.limit(limit);
-            totalElements = Math.min(totalElements, limit);
+            totalItems = Math.min(totalItems, limit);
         }
 
-        sort = sort.filter((s) => sortable?.includes(s.property) ?? true);
+        sortBy = sortBy.filter((s) => sortable?.includes(s.property) ?? true);
 
-        queryBuilder.orderBy(getQBQueryOrderMap(sort, this.driverName));
+        queryBuilder.orderBy(getQBQueryOrderMap(sortBy, this.driverName));
 
         if (!unpaged) {
-            const difference = offset + size - totalElements;
+            const difference = offset + size - totalItems;
             queryBuilder.offset(offset).limit(size - (difference > 0 ? difference : 0));
         }
 
         const result = await queryBuilder.getResultList();
-        const content = result.map(this._map);
-        const totalPages = Math.ceil(totalElements / size);
+        const data = result.map(this._map);
+        const totalPages = Math.ceil(totalItems / size);
+
+        const options = `&limit=${size}`;
+        const buildLink = (p: number): string => '?page=' + p + options;
 
         return {
-            content,
-            pageable: {
-                page,
+            data,
+            meta: {
+                currentPage,
                 offset,
                 size,
                 unpaged,
                 totalPages,
-                totalElements,
-                sort
+                totalItems,
+                sortBy
+            },
+            links: {
+                first: currentPage == 1 ? undefined : buildLink(1),
+                previous: currentPage - 1 < 1 ? undefined : buildLink(currentPage - 1),
+                current: buildLink(currentPage),
+                next: currentPage + 1 > totalPages ? undefined : buildLink(currentPage + 1),
+                last: currentPage == totalPages || !totalItems ? undefined : buildLink(totalPages)
             }
         } as TPage;
     }
@@ -93,9 +103,9 @@ function getAlias(property: string): string {
     return property.split('.').pop() ?? property;
 }
 
-function getQBQueryOrderMap<TEntity extends object>(sort: Sort[], driverName: DriverName | string): QBQueryOrderMap<TEntity> {
+function getQBQueryOrderMap<TEntity extends object>(sortBy: Sort[], driverName: DriverName | string): QBQueryOrderMap<TEntity> {
     if (driverName === 'MySqlDriver' || driverName === 'MariaDbDriver') {
-        return sort.reduce(
+        return sortBy.reduce(
             (acc, s) => ({
                 ...acc,
                 ...(s.nullsFirst !== undefined && { [`ISNULL(${s.property})`]: s.nullsFirst ? 'DESC' : 'ASC' }),
@@ -104,7 +114,7 @@ function getQBQueryOrderMap<TEntity extends object>(sort: Sort[], driverName: Dr
             {} as QBQueryOrderMap<TEntity>
         );
     }
-    return sort.reduce(
+    return sortBy.reduce(
         (acc, s) => ({
             ...acc,
             [s.property]: getQueryOrder(s.direction, s.nullsFirst)

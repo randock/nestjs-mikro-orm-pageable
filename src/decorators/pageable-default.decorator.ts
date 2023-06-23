@@ -3,7 +3,7 @@ import { PageableQuery, Sort, ExtendedPageable } from '../types';
 import { defaultPageable, defaultPageableOptions, sortRegex } from '../constants';
 
 export const PageableDefault = createParamDecorator((data: PageableQuery, ctx: ExecutionContext): ExtendedPageable => {
-    const { page: defaultPage, size: defaultSize, enableUnpaged, enableSize, enableSort, maxSize, limit, ...defaultData } = { ...defaultPageableOptions, ...data };
+    const { currentPage: defaultPage, size: defaultSize, enableUnpaged, enableSize, enableSort, maxSize, limit, ...defaultData } = { ...defaultPageableOptions, ...data };
     const request: unknown = ctx.switchToHttp().getRequest();
 
     const pageable: ExtendedPageable = {
@@ -18,7 +18,7 @@ export const PageableDefault = createParamDecorator((data: PageableQuery, ctx: E
     const { query } = request;
 
     const parsedPageInt = hasParam(query, 'page') ? maybeParseIntParam(query.page) : undefined;
-    const page = isSafePositiveInteger(parsedPageInt) ? parsedPageInt : isSafePositiveInteger(defaultPage) ? defaultPage : pageable.page;
+    const page = isSafePositiveInteger(parsedPageInt) ? parsedPageInt : isSafePositiveInteger(defaultPage) ? defaultPage : pageable.currentPage;
     const pageIndex = page - 1;
 
     const parsedSizeInt = enableSize && hasParam(query, 'size') ? maybeParseIntParam(query.size) : undefined;
@@ -37,15 +37,15 @@ export const PageableDefault = createParamDecorator((data: PageableQuery, ctx: E
     }
 
     if (offset !== undefined) {
-        pageable.page = page;
+        pageable.currentPage = page;
         pageable.size = size;
         pageable.offset = offset;
     }
 
-    if (enableSort && hasParam(query, 'sort')) {
-        const parsedSort = maybeParseSortParam(query.sort);
+    if (enableSort && hasParam(query, 'sortBy')) {
+        const parsedSort = maybeParseSortParam(query.sortBy);
         if (parsedSort) {
-            pageable.sort = parsedSort;
+            pageable.sortBy = parsedSort;
         }
     }
 

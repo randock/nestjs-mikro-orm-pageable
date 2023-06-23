@@ -82,7 +82,7 @@ An example of the response shape is shown as below:
 
 ```json
 {
-  "content": [
+  "data": [
     {
       "id": 1,
       "title": "Article 1",
@@ -91,8 +91,10 @@ An example of the response shape is shown as below:
       "updatedAt": "2021-08-01T00:00:00.000Z"
     }
   ],
-  "pageable": {
-    "page": 1,
+  "meta": {
+    "totalItems": 1,
+    "currentPage": 1,
+    "totalPages": 1,
     "size": 10,
     "offset": 0,
     "sort": [
@@ -102,9 +104,14 @@ An example of the response shape is shown as below:
         "nullsFirst": false
       }
     ],
-    "unpaged": false,
-    "totalPage": 1,
-    "totalElement": 1
+    "unpaged": false
+  },
+  "links": {
+    "first": "http://localhost:3000/cats?limit=5&page=1&sortBy=color:DESC&search=i&filter.age=$gte:3",
+    "previous": "http://localhost:3000/cats?limit=5&page=1&sortBy=color:DESC&search=i&filter.age=$gte:3",
+    "current": "http://localhost:3000/cats?limit=5&page=2&sortBy=color:DESC&search=i&filter.age=$gte:3",
+    "next": "http://localhost:3000/cats?limit=5&page=3&sortBy=color:DESC&search=i&filter.age=$gte:3",
+    "last": "http://localhost:3000/cats?limit=5&page=3&sortBy=color:DESC&search=i&filter.age=$gte:3"
   }
 }
 ```

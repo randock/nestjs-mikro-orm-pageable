@@ -17,13 +17,13 @@ type QbTestMethodMap = {
 };
 
 const defaultPageable: Pageable = {
-    page: 0,
+    currentPage: 0,
     size: 10,
     offset: 0,
     totalPages: 0,
-    totalElements: 0,
+    totalItems: 0,
     unpaged: false,
-    sort: []
+    sortBy: []
 };
 
 const pageableFactory = (values?: Partial<Pageable>): Pageable => ({
@@ -70,7 +70,7 @@ describe('PageFactory', () => {
                 const pageable = pageableFactory();
                 const page = await new PageFactory(pageable, mockRepo).create();
                 expect(page).toEqual({
-                    content: [],
+                    data: [],
                     pageable
                 });
             });
@@ -84,17 +84,17 @@ describe('PageFactory', () => {
                     resultList
                 });
                 const pageable = pageableFactory({
-                    page: 1,
+                    currentPage: 1,
                     size: 5,
                     offset: 5
                 });
                 const page = await new PageFactory(pageable, mockRepo).create();
                 expect(page).toEqual({
-                    content: resultList,
-                    pageable: {
+                    data: resultList,
+                    meta: {
                         ...pageable,
                         totalPages: 4,
-                        totalElements: count
+                        totalItems: count
                     }
                 });
             });
@@ -117,7 +117,7 @@ describe('PageFactory', () => {
             it('should filter the sort array to only include the sortable fields', async () => {
                 const [mockRepo, qbTestMethodMap] = mockRepoFactory();
                 const pageable = pageableFactory({
-                    sort: [
+                    sortBy: [
                         {
                             property: 'id',
                             direction: 'asc',
@@ -222,7 +222,7 @@ describe('PageFactory', () => {
             });
             const pageable = pageableFactory();
             const page = await new PageFactory(pageable, mockRepo).create();
-            expect(page.content).toEqual(resultList);
+            expect(page.data).toEqual(resultList);
         });
 
         it('should return the mapped result if a mapper is provided', async () => {
@@ -233,7 +233,7 @@ describe('PageFactory', () => {
             });
             const pageable = pageableFactory();
             const page = await new PageFactory(pageable, mockRepo).map((result) => ({ ...result, idPlus1: result.id + 1 })).create();
-            expect(page.content).toEqual(resultList.map((item) => ({ ...item, idPlus1: item.id + 1 })));
+            expect(page.data).toEqual(resultList.map((item) => ({ ...item, idPlus1: item.id + 1 })));
         });
     });
 });

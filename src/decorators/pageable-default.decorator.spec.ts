@@ -25,13 +25,13 @@ function contextFactory(query: unknown) {
 }
 
 const defaultPageable: Pageable = {
-    page: 1,
+    currentPage: 1,
     size: 10,
     offset: 0,
     totalPages: 0,
-    totalElements: 0,
+    totalItems: 0,
     unpaged: false,
-    sort: []
+    sortBy: []
 };
 
 describe('PageableDefault', () => {
@@ -39,23 +39,23 @@ describe('PageableDefault', () => {
         const context = contextFactory({});
         const pageable = decoratorFactory({}, context);
         expect(pageable).toEqual({
-            page: 1,
+            currentPage: 1,
             size: 10,
             offset: 0,
             totalPages: 0,
-            totalElements: 0,
+            totalItems: 0,
             unpaged: false,
-            sort: []
+            sortBy: []
         });
     });
     it('should return custom default values when empty query is provided', () => {
         const context = contextFactory({});
         const pageable = decoratorFactory(
             {
-                page: 1,
+                currentPage: 1,
                 size: 20,
                 unpaged: true,
-                sort: [
+                sortBy: [
                     {
                         property: 'test',
                         direction: 'asc',
@@ -66,13 +66,13 @@ describe('PageableDefault', () => {
             context
         );
         expect(pageable).toEqual({
-            page: 1,
+            currentPage: 1,
             size: 20,
             offset: 0,
             totalPages: 0,
-            totalElements: 0,
+            totalItems: 0,
             unpaged: true,
-            sort: [
+            sortBy: [
                 {
                     property: 'test',
                     direction: 'asc',
@@ -86,16 +86,16 @@ describe('PageableDefault', () => {
             query: {
                 page: '1',
                 size: '20',
-                sort: 'property[test];direction[asc];nulls-first[true]'
+                sortBy: 'property[test];direction[asc];nulls-first[true]'
             },
             expected: {
-                page: 1,
+                currentPage: 1,
                 size: 20,
                 offset: 0,
                 totalPages: 0,
-                totalElements: 0,
+                totalItems: 0,
                 unpaged: false,
-                sort: [
+                sortBy: [
                     {
                         property: 'test',
                         direction: 'asc',
@@ -108,16 +108,16 @@ describe('PageableDefault', () => {
             query: {
                 page: '2',
                 size: '4',
-                sort: ['property[test];direction[asc];nulls-first[true]', 'property[@!*#-test2];direction[desc];nulls-first[false]', 'property[_test 3_];direction[asc]']
+                sortBy: ['property[test];direction[asc];nulls-first[true]', 'property[@!*#-test2];direction[desc];nulls-first[false]', 'property[_test 3_];direction[asc]']
             },
             expected: {
-                page: 2,
+                currentPage: 2,
                 size: 4,
                 offset: 4,
                 totalPages: 0,
-                totalElements: 0,
+                totalItems: 0,
                 unpaged: false,
-                sort: [
+                sortBy: [
                     {
                         property: 'test',
                         direction: 'asc',
@@ -144,24 +144,24 @@ describe('PageableDefault', () => {
         it.each([
             {
                 defaultValues: {
-                    page: 1,
+                    currentPage: 1,
                     size: -20,
                     unpaged: true,
-                    sort: []
+                    sortBy: []
                 },
                 expected: {
                     ...defaultPageable,
-                    page: 1,
+                    currentPage: 1,
                     offset: 0,
                     unpaged: true
                 }
             },
             {
                 defaultValues: {
-                    page: -1,
+                    currentPage: -1,
                     size: 20,
                     unpaged: false,
-                    sort: []
+                    sortBy: []
                 },
                 expected: {
                     ...defaultPageable,
@@ -170,7 +170,7 @@ describe('PageableDefault', () => {
             },
             {
                 defaultValues: {
-                    page: Number.MAX_SAFE_INTEGER + 1
+                    currentPage: Number.MAX_SAFE_INTEGER + 1
                 },
                 expected: {
                     ...defaultPageable
@@ -186,7 +186,7 @@ describe('PageableDefault', () => {
             },
             {
                 defaultValues: {
-                    page: Math.floor(Number.MAX_SAFE_INTEGER / 2),
+                    currentPage: Math.floor(Number.MAX_SAFE_INTEGER / 2),
                     size: 3
                 },
                 expected: {
@@ -195,7 +195,7 @@ describe('PageableDefault', () => {
             },
             {
                 defaultValues: {
-                    page: 0.1234567,
+                    currentPage: 0.1234567,
                     size: 9.87654321
                 },
                 expected: {
@@ -222,7 +222,7 @@ describe('PageableDefault', () => {
                 query: {
                     page: '-1',
                     size: '20',
-                    sort: 'property[test];direction[xyz];nulls-first[true]'
+                    sortBy: 'property[test];direction[xyz];nulls-first[true]'
                 },
                 expected: {
                     ...defaultPageable,
@@ -233,11 +233,11 @@ describe('PageableDefault', () => {
                 query: {
                     page: 'abc',
                     size: 'xyz',
-                    sort: 'property[a.b];direction[asc];nulls-first[true]'
+                    sortBy: 'property[a.b];direction[asc];nulls-first[true]'
                 },
                 expected: {
                     ...defaultPageable,
-                    sort: [
+                    sortBy: [
                         {
                             property: 'a.b',
                             direction: 'asc',

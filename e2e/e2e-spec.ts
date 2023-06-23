@@ -7,13 +7,13 @@ import { makeTestData } from './src/testData';
 import { TestDto } from './src/test.dto';
 
 const defaultPageable: Pageable = {
-    page: 1,
+    currentPage: 1,
     offset: 0,
     size: 10,
     unpaged: false,
     totalPages: 100,
-    totalElements: 1000,
-    sort: []
+    totalItems: 1000,
+    sortBy: []
 };
 
 describe('pageable', () => {
@@ -38,8 +38,13 @@ describe('pageable', () => {
             .get('/test')
             .expect(200)
             .expect({
-                content: testData.slice(0, 10).map((t) => serialize(t)),
-                pageable: defaultPageable
+                data: testData.slice(0, 10).map((t) => serialize(t)),
+                meta: defaultPageable,
+                links: {
+                    current: '?page=1&limit=10',
+                    next: '?page=2&limit=10',
+                    last: '?page=100&limit=10'
+                }
             });
     });
 
@@ -48,25 +53,38 @@ describe('pageable', () => {
             .get('/test?page=2')
             .expect(200)
             .expect({
-                content: testData.slice(10, 20).map((t) => serialize(t)),
-                pageable: {
+                data: testData.slice(10, 20).map((t) => serialize(t)),
+                meta: {
                     ...defaultPageable,
-                    page: 2,
+                    currentPage: 2,
                     offset: 10
+                },
+                links: {
+                    first: '?page=1&limit=10',
+                    previous: '?page=1&limit=10',
+                    current: '?page=2&limit=10',
+                    next: '?page=3&limit=10',
+                    last: '?page=100&limit=10'
                 }
             });
     });
 
-    it('should return a non-existing page (page of MAX_SAFE_INTEGER / 10, size of 10) with an empty content array', () => {
+    it('should return a non-existing page (page of MAX_SAFE_INTEGER / 10, size of 10) with an empty data array', () => {
         return request(app.getHttpServer())
             .get(`/test?page=${Math.floor(Number.MAX_SAFE_INTEGER / 10)}`)
             .expect(200)
             .expect({
-                content: [],
-                pageable: {
+                data: [],
+                meta: {
                     ...defaultPageable,
-                    page: Math.floor(Number.MAX_SAFE_INTEGER / 10),
+                    currentPage: Math.floor(Number.MAX_SAFE_INTEGER / 10),
                     offset: (Math.floor(Number.MAX_SAFE_INTEGER / 10) - 1) * 10
+                },
+                links: {
+                    first: '?page=1&limit=10',
+                    previous: '?page=900719925474098&limit=10',
+                    current: '?page=900719925474099&limit=10',
+                    last: '?page=100&limit=10'
                 }
             });
     });
@@ -76,11 +94,16 @@ describe('pageable', () => {
             .get('/test?size=1')
             .expect(200)
             .expect({
-                content: testData.slice(0, 1).map((t) => serialize(t)),
-                pageable: {
+                data: testData.slice(0, 1).map((t) => serialize(t)),
+                meta: {
                     ...defaultPageable,
                     size: 1,
                     totalPages: 1000
+                },
+                links: {
+                    current: '?page=1&limit=1',
+                    next: '?page=2&limit=1',
+                    last: '?page=1000&limit=1'
                 }
             });
     });
@@ -88,59 +111,69 @@ describe('pageable', () => {
     describe('sorting', () => {
         it('should return the first page with sorting by id (DESC)', () => {
             return request(app.getHttpServer())
-                .get('/test?sort=property[id];direction[desc];')
+                .get('/test?sortBy=property[id];direction[desc];')
                 .expect(200)
                 .expect({
-                    content: sort(testData, [{ property: 'id', direction: 'desc' }])
+                    data: sortBy(testData, [{ property: 'id', direction: 'desc' }])
                         .slice(0, 10)
                         .map((t) => serialize(t)),
-                    pageable: {
+                    meta: {
                         ...defaultPageable,
-                        sort: [
+                        sortBy: [
                             {
                                 property: 'id',
                                 direction: 'desc'
                             }
                         ]
+                    },
+                    links: {
+                        current: '?page=1&limit=10',
+                        next: '?page=2&limit=10',
+                        last: '?page=100&limit=10'
                     }
                 });
         });
 
         it('should return the first page with sorting by description (DESC, nulls first)', () => {
             return request(app.getHttpServer())
-                .get('/test?sort=property[description];direction[desc];nulls-first[true];')
+                .get('/test?sortBy=property[description];direction[desc];nulls-first[true];')
                 .expect(200)
                 .expect({
-                    content: sort(testData, [{ property: 'description', direction: 'desc', nullsFirst: true }])
+                    data: sortBy(testData, [{ property: 'description', direction: 'desc', nullsFirst: true }])
                         .slice(0, 10)
                         .map((t) => serialize(t)),
-                    pageable: {
+                    meta: {
                         ...defaultPageable,
-                        sort: [
+                        sortBy: [
                             {
                                 property: 'description',
                                 direction: 'desc',
                                 nullsFirst: true
                             }
                         ]
+                    },
+                    links: {
+                        current: '?page=1&limit=10',
+                        next: '?page=2&limit=10',
+                        last: '?page=100&limit=10'
                     }
                 });
         });
 
         it('should return the first page with sorting by description (DESC, nulls last) and by id (ASC)', () => {
             return request(app.getHttpServer())
-                .get('/test?sort=property[description];direction[desc];nulls-first[false];&sort=property[id];direction[asc];')
+                .get('/test?sortBy=property[description];direction[desc];nulls-first[false];&sortBy=property[id];direction[asc];')
                 .expect(200)
                 .expect({
-                    content: sort(testData, [
+                    data: sortBy(testData, [
                         { property: 'description', direction: 'desc', nullsFirst: false },
                         { property: 'id', direction: 'asc' }
                     ])
                         .slice(0, 10)
                         .map((t) => serialize(t)),
-                    pageable: {
+                    meta: {
                         ...defaultPageable,
-                        sort: [
+                        sortBy: [
                             {
                                 property: 'description',
                                 direction: 'desc',
@@ -151,6 +184,11 @@ describe('pageable', () => {
                                 direction: 'asc'
                             }
                         ]
+                    },
+                    links: {
+                        current: '?page=1&limit=10',
+                        next: '?page=2&limit=10',
+                        last: '?page=100&limit=10'
                     }
                 });
         });
@@ -161,8 +199,13 @@ describe('pageable', () => {
                     .get('/test/enable-sort-false?sort=property[id];direction[desc];')
                     .expect(200)
                     .expect({
-                        content: testData.slice(0, 10).map((t) => serialize(t)),
-                        pageable: defaultPageable
+                        data: testData.slice(0, 10).map((t) => serialize(t)),
+                        meta: defaultPageable,
+                        links: {
+                            current: '?page=1&limit=10',
+                            next: '?page=2&limit=10',
+                            last: '?page=100&limit=10'
+                        }
                     });
             });
         });
@@ -174,8 +217,13 @@ describe('pageable', () => {
                 .get('/test?unpaged=true')
                 .expect(200)
                 .expect({
-                    content: testData.slice(0, 10).map((t) => serialize(t)),
-                    pageable: defaultPageable
+                    data: testData.slice(0, 10).map((t) => serialize(t)),
+                    meta: defaultPageable,
+                    links: {
+                        current: '?page=1&limit=10',
+                        next: '?page=2&limit=10',
+                        last: '?page=100&limit=10'
+                    }
                 });
         });
         it('should return unpaged results when querying with unpaged and enableUnpaged is true', () => {
@@ -183,13 +231,19 @@ describe('pageable', () => {
                 .get('/test/enable-unpaged-true?unpaged=true')
                 .expect(200)
                 .expect({
-                    content: testData.map((t) => serialize(t)),
-                    pageable: {
+                    data: testData.map((t) => serialize(t)),
+                    meta: {
                         ...defaultPageable,
-                        page: 0,
+                        currentPage: 0,
                         size: 0,
                         totalPages: null,
                         unpaged: true
+                    },
+                    links: {
+                        first: '?page=1&limit=0',
+                        current: '?page=0&limit=0',
+                        next: '?page=1&limit=0',
+                        last: '?page=Infinity&limit=0'
                     }
                 });
         });
@@ -201,8 +255,13 @@ describe('pageable', () => {
                 .get('/test/enable-size-false?size=5')
                 .expect(200)
                 .expect({
-                    content: testData.slice(0, 10).map((t) => serialize(t)),
-                    pageable: defaultPageable
+                    data: testData.slice(0, 10).map((t) => serialize(t)),
+                    meta: defaultPageable,
+                    links: {
+                        current: '?page=1&limit=10',
+                        next: '?page=2&limit=10',
+                        last: '?page=100&limit=10'
+                    }
                 });
         });
     });
@@ -213,13 +272,18 @@ describe('pageable', () => {
                 .get('/test/limit-15?page=2')
                 .expect(200)
                 .expect({
-                    content: testData.slice(10, 15).map((t) => serialize(t)),
-                    pageable: {
+                    data: testData.slice(10, 15).map((t) => serialize(t)),
+                    meta: {
                         ...defaultPageable,
-                        page: 2,
+                        currentPage: 2,
                         offset: 10,
                         totalPages: 2,
-                        totalElements: 15
+                        totalItems: 15
+                    },
+                    links: {
+                        first: '?page=1&limit=10',
+                        previous: '?page=1&limit=10',
+                        current: '?page=2&limit=10'
                     }
                 });
         });
@@ -231,11 +295,16 @@ describe('pageable', () => {
                 .get('/test/max-size-5?size=10')
                 .expect(200)
                 .expect({
-                    content: testData.slice(0, 5).map((t) => serialize(t)),
-                    pageable: {
+                    data: testData.slice(0, 5).map((t) => serialize(t)),
+                    meta: {
                         ...defaultPageable,
                         size: 5,
                         totalPages: 200
+                    },
+                    links: {
+                        current: '?page=1&limit=5',
+                        next: '?page=2&limit=5',
+                        last: '?page=200&limit=5'
                     }
                 });
         });
@@ -254,7 +323,7 @@ function serialize({ id, title, description, createdAt, updatedAt }: TestDto) {
     };
 }
 
-function sort(testDtos: TestDto[], sorts: Sort[]) {
+function sortBy(testDtos: TestDto[], sorts: Sort[]) {
     for (let i = 0; i < sorts.length; i++) {
         testDtos.sort((a, b) => {
             const propsToCheck = sorts.slice(0, i).map((sort) => sort.property) as (keyof TestDto)[];
