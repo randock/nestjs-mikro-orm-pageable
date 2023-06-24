@@ -1,5 +1,5 @@
-import { EntityRepository, QueryBuilder } from '@mikro-orm/knex';
-import { Dictionary, GetRepository, QBFilterQuery, QBQueryOrderMap, QueryOrder } from '@mikro-orm/core';
+import { EntityRepository, QueryBuilder, SelectQueryBuilder } from '@mikro-orm/knex';
+import { Dictionary, QBFilterQuery, QBQueryOrderMap, QueryOrder } from '@mikro-orm/core';
 import { DriverName, ExtendedPageable, Page, Relation, Sort, SortDirection } from './types';
 
 type PageFactoryConfig<T extends object> = {
@@ -15,11 +15,11 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
 
     constructor(
         protected pageable: ExtendedPageable,
-        protected repo: EntityRepository<TEntity> | QueryBuilder<TEntity>,
+        protected repo: EntityRepository<TEntity> | QueryBuilder<TEntity> | SelectQueryBuilder<TEntity>,
         protected _config: PageFactoryConfig<TEntity> = {},
         protected _map: (entity: TEntity & Dictionary) => TOutput & Dictionary = (entity) => entity as unknown as TOutput & Dictionary
     ) {
-        this.driverName = repo instanceof QueryBuilder ? '' : repo.getEntityManager().getDriver().constructor.name;
+        this.driverName = repo instanceof EntityRepository ? repo.getEntityManager().getDriver().constructor.name : '';
     }
 
     map<TMappedOutput extends object, TMappedPage = Page<TMappedOutput>>(mapper: (entity: TEntity & Dictionary) => TMappedOutput): PageFactory<TEntity, TMappedOutput, TMappedPage> {
