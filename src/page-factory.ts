@@ -1,4 +1,4 @@
-import { EntityRepository, QueryBuilder, SelectQueryBuilder } from '@mikro-orm/knex';
+import { AbstractSqlDriver, EntityRepository, QueryBuilder } from '@mikro-orm/knex';
 import { Dictionary, QBFilterQuery, QBQueryOrderMap, QueryOrder } from '@mikro-orm/core';
 import { DriverName, ExtendedPageable, Page, Relation, Sort, SortDirection } from './types';
 
@@ -15,11 +15,12 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
 
     constructor(
         protected pageable: ExtendedPageable,
-        protected repo: EntityRepository<TEntity> | QueryBuilder<TEntity> | SelectQueryBuilder<TEntity>,
+        protected repo: EntityRepository<TEntity> | QueryBuilder<TEntity>,
         protected _config: PageFactoryConfig<TEntity> = {},
         protected _map: (entity: TEntity & Dictionary) => TOutput & Dictionary = (entity) => entity as unknown as TOutput & Dictionary
     ) {
-        this.driverName = repo instanceof EntityRepository ? repo.getEntityManager().getDriver().constructor.name : '';
+        this.driverName =
+            this.repo instanceof EntityRepository ? (repo as EntityRepository<TEntity>).getEntityManager().getDriver().constructor.name : ((repo as any).driver as AbstractSqlDriver).constructor.name;
     }
 
     map<TMappedOutput extends object, TMappedPage = Page<TMappedOutput>>(mapper: (entity: TEntity & Dictionary) => TMappedOutput): PageFactory<TEntity, TMappedOutput, TMappedPage> {
@@ -32,7 +33,7 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
     }
 
     async create(): Promise<TPage> {
-        const { select = '*', sortable, relations, where, alias } = this._config;
+        const { select, sortable, relations, where, alias } = this._config;
         const queryBuilder = this.repo instanceof EntityRepository ? this.repo.createQueryBuilder(alias) : this.repo;
         let { currentPage, offset, size, sortBy } = this.pageable;
         const { unpaged, limit } = this.pageable;
@@ -42,7 +43,9 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
             size = 0;
         }
 
-        queryBuilder.select(select);
+        if (undefined !== select) {
+            queryBuilder.select(select);
+        }
 
         const applyRelation = (relation: Relation) => {
             queryBuilder[relation.andSelect ? 'joinAndSelect' : 'join'](relation.property, relation.alias ?? getAlias(relation.property), relation.cond, relation.type, relation.path);
