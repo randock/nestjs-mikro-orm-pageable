@@ -33,7 +33,7 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
 
     async create(): Promise<TPage> {
         const { select = '*', sortable, relations, where, alias } = this._config;
-        const queryBuilder = this.repo instanceof QueryBuilder ? this.repo : this.repo.createQueryBuilder(alias);
+        const queryBuilder = this.repo instanceof EntityRepository ? this.repo.createQueryBuilder(alias) : this.repo;
         let { currentPage, offset, size, sortBy } = this.pageable;
         const { unpaged, limit } = this.pageable;
         if (unpaged) {
