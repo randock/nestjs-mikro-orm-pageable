@@ -72,7 +72,7 @@ export class ArticlesService {
 With `@PageableDefault`, you can now provide the below query parameters to `/articles`:
 
 - page: the page number, starting from 1, e.g., `?page=1`
-- size: the page size, default to 10, e.g., `?size=20`
+- limit: the page size, default to 10, e.g., `?limit=20`
 - sort: the sort expression, e.g., `?sort=property[field1];direction[asc];nulls-first[true]`
 - unpaged: whether to disable pagination, default to false, e.g., `?unpaged=true`
 

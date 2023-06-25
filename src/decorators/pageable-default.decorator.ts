@@ -21,7 +21,7 @@ export const PageableDefault = createParamDecorator((data: PageableQuery, ctx: E
     const page = isSafePositiveInteger(parsedPageInt) ? parsedPageInt : isSafePositiveInteger(defaultPage) ? defaultPage : pageable.currentPage;
     const pageIndex = page - 1;
 
-    const parsedSizeInt = enableSize && hasParam(query, 'size') ? maybeParseIntParam(query.size) : undefined;
+    const parsedSizeInt = enableSize && hasParam(query, 'limit') ? maybeParseIntParam(query.limit) : undefined;
     const size =
         isSafePositiveInteger(parsedSizeInt) && parsedSizeInt <= maxSize
             ? parsedSizeInt
