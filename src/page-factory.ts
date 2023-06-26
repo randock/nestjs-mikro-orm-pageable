@@ -2,7 +2,7 @@ import { AbstractSqlDriver, EntityRepository, QueryBuilder } from '@mikro-orm/kn
 import { Dictionary, QBFilterQuery, QBQueryOrderMap, QueryOrder } from '@mikro-orm/core';
 import { DriverName, ExtendedPageable, Page, Relation, Sort, SortDirection } from './types';
 
-type PageFactoryConfig<T extends object> = {
+export type PageFactoryConfig<T extends object> = {
     alias?: string;
     sortable?: (Extract<keyof T, string> | string)[] | null;
     select?: Extract<keyof T, string> | string | (Extract<keyof T, string> | string)[];
