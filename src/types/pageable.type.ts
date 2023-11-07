@@ -8,6 +8,7 @@ export type Pageable<T extends Record<string, unknown> = NonNullable<unknown>> =
     totalPages: number;
     totalItems: number;
     sortBy: Sort[];
+    path: string;
 } & T;
 
 export type ExtendedPageable = Pageable<{ limit?: number }>;

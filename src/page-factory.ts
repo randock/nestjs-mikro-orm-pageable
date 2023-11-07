@@ -1,6 +1,7 @@
-import { AbstractSqlDriver, EntityRepository, QueryBuilder } from '@mikro-orm/knex';
-import { Dictionary, QBFilterQuery, QBQueryOrderMap, QueryOrder } from '@mikro-orm/core';
-import { DriverName, ExtendedPageable, Page, Relation, Sort, SortDirection } from './types';
+import { EntityRepository, QueryBuilder } from '@mikro-orm/knex';
+import { Dictionary, QBFilterQuery } from '@mikro-orm/core';
+import { DriverName, ExtendedPageable, Page, Relation } from './types';
+import { getAlias, getQBQueryOrderMap, getQueryUrlComponents } from './helpers';
 
 export type PageFactoryConfig<T extends object> = {
     alias?: string;
@@ -12,6 +13,7 @@ export type PageFactoryConfig<T extends object> = {
 
 export class PageFactory<TEntity extends object, TOutput extends object = TEntity, TPage = Page<TOutput>> {
     protected driverName: DriverName | string;
+    protected isEntityRepository: boolean;
 
     constructor(
         protected pageable: ExtendedPageable,
@@ -19,8 +21,13 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
         protected _config: PageFactoryConfig<TEntity> = {},
         protected _map: (entity: TEntity & Dictionary) => TOutput & Dictionary = (entity) => entity as unknown as TOutput & Dictionary
     ) {
-        this.driverName =
-            this.repo instanceof EntityRepository ? (repo as EntityRepository<TEntity>).getEntityManager().getDriver().constructor.name : ((repo as any).driver as AbstractSqlDriver).constructor.name;
+        if (this.repo.constructor.name === 'QueryBuilder') {
+            this.driverName = (this.repo as any).driver.constructor.name;
+            this.isEntityRepository = false;
+        } else {
+            this.driverName = (repo as EntityRepository<TEntity>).getEntityManager().getDriver().constructor.name;
+            this.isEntityRepository = true;
+        }
     }
 
     map<TMappedOutput extends object, TMappedPage = Page<TMappedOutput>>(mapper: (entity: TEntity & Dictionary) => TMappedOutput): PageFactory<TEntity, TMappedOutput, TMappedPage> {
@@ -34,7 +41,7 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
 
     async create(): Promise<TPage> {
         const { select, sortable, relations, where, alias } = this._config;
-        const queryBuilder = this.repo instanceof EntityRepository ? this.repo.createQueryBuilder(alias) : this.repo;
+        const queryBuilder: QueryBuilder<TEntity> = this.isEntityRepository ? (this.repo as EntityRepository<TEntity>).createQueryBuilder(alias) : (this.repo as QueryBuilder<TEntity>);
         let { currentPage, offset, size, sortBy } = this.pageable;
         const { unpaged, limit } = this.pageable;
         if (unpaged) {
@@ -73,12 +80,15 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
             queryBuilder.offset(offset).limit(size - (difference > 0 ? difference : 0));
         }
 
+        const { queryOrigin, queryPath } = getQueryUrlComponents(this.pageable.path);
+        const path: string = queryOrigin + queryPath;
+
         const result = await queryBuilder.getResultList();
         const data = result.map(this._map);
         const totalPages = Math.ceil(totalItems / size);
 
         const options = `&limit=${size}`;
-        const buildLink = (p: number): string => '?page=' + p + options;
+        const buildLink = (p: number): string => path + '?page=' + p + options;
 
         return {
             data,
@@ -100,35 +110,4 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
             }
         } as TPage;
     }
-}
-
-function getAlias(property: string): string {
-    return property.split('.').pop() ?? property;
-}
-
-function getQBQueryOrderMap<TEntity extends object>(sortBy: Sort[], driverName: DriverName | string): QBQueryOrderMap<TEntity> {
-    if (driverName === 'MySqlDriver' || driverName === 'MariaDbDriver') {
-        return sortBy.reduce(
-            (acc, s) => ({
-                ...acc,
-                ...(s.nullsFirst !== undefined && { [`ISNULL(${s.property})`]: s.nullsFirst ? 'DESC' : 'ASC' }),
-                [s.property]: s.direction
-            }),
-            {} as QBQueryOrderMap<TEntity>
-        );
-    }
-    return sortBy.reduce(
-        (acc, s) => ({
-            ...acc,
-            [s.property]: getQueryOrder(s.direction, s.nullsFirst)
-        }),
-        {} as QBQueryOrderMap<TEntity>
-    );
-}
-
-function getQueryOrder(direction: SortDirection, nullsFirst?: boolean): QueryOrder {
-    if (nullsFirst === undefined) {
-        return direction === 'asc' ? QueryOrder.ASC : QueryOrder.DESC;
-    }
-    return nullsFirst ? (direction === 'asc' ? QueryOrder.ASC_NULLS_FIRST : QueryOrder.DESC_NULLS_FIRST) : direction === 'asc' ? QueryOrder.ASC_NULLS_LAST : QueryOrder.DESC_NULLS_LAST;
 }

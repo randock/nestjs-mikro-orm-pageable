@@ -1,10 +1,13 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { PageableQuery, Sort, ExtendedPageable } from '../types';
 import { defaultPageable, defaultPageableOptions, sortRegex } from '../constants';
+import { isExpressRequest } from '../helpers';
+import type { Request as ExpressRequest } from 'express';
+import type { FastifyRequest } from 'fastify';
 
 export const PageableDefault = createParamDecorator((data: PageableQuery, ctx: ExecutionContext): ExtendedPageable => {
     const { currentPage: defaultPage, size: defaultSize, enableUnpaged, enableSize, enableSort, maxSize, limit, ...defaultData } = { ...defaultPageableOptions, ...data };
-    const request: unknown = ctx.switchToHttp().getRequest();
+    const request: ExpressRequest | FastifyRequest = ctx.switchToHttp().getRequest();
 
     const pageable: ExtendedPageable = {
         ...defaultPageable,
@@ -16,6 +19,16 @@ export const PageableDefault = createParamDecorator((data: PageableQuery, ctx: E
     }
 
     const { query } = request;
+
+    // Determine if Express or Fastify to rebuild the original url and reduce down to protocol, host and base url
+    let originalUrl: string;
+    if (isExpressRequest(request)) {
+        originalUrl = request.protocol + '://' + request.get('host') + request.originalUrl;
+    } else {
+        originalUrl = request.protocol + '://' + request.hostname + request.url;
+    }
+    const urlParts = new URL(originalUrl);
+    pageable.path = urlParts.protocol + '//' + urlParts.host + urlParts.pathname;
 
     const parsedPageInt = hasParam(query, 'page') ? maybeParseIntParam(query.page) : undefined;
     const page = isSafePositiveInteger(parsedPageInt) ? parsedPageInt : isSafePositiveInteger(defaultPage) ? defaultPage : pageable.currentPage;

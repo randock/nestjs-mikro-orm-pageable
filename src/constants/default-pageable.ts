@@ -7,5 +7,6 @@ export const defaultPageable: Pageable = {
     totalPages: 0,
     totalItems: 0,
     unpaged: false,
-    sortBy: []
+    sortBy: [],
+    path: ''
 };
