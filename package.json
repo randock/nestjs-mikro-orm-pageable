@@ -1,5 +1,5 @@
 {
-    "name": "nestjs-mikro-orm-pageable",
+    "name": "@mikro-orm/nestjs-paginate",
     "version": "0.0.1",
     "description": "Pageable library for MikroORM repositories in Nest.js",
     "main": "dist/index.js",

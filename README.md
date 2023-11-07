@@ -1,5 +1,5 @@
 <div align="center">
-  <h1> NestJS Mikro-ORM Pageable </h1>
+  <h1> NestJS Mikro-ORM Paginate </h1>
 </div>
 
 A pageable package for convenient pagination and sorting implementation with MikroORM repositories in Nest.js.
@@ -27,7 +27,7 @@ A pageable package for convenient pagination and sorting implementation with Mik
 ### Installation
 
 ```bash
-npm install nestjs-mikro-orm-pageable
+npm install @mikro-orm/nestjs-paginate
 ```
 
 ### Basic Usage
@@ -35,7 +35,7 @@ npm install nestjs-mikro-orm-pageable
 ```typescript
 // articles.controller.ts
 import { Controller, Get } from '@nestjs/common';
-import { PageableDefault } from 'nestjs-mikro-orm-pageable';
+import { PageableDefault } from '@mikro-orm/nestjs-paginate';
 import { ArticlesService } from './articles.service.ts';
 import { ArticleDto } from './dtos/article.dto.ts';
 
@@ -55,7 +55,7 @@ export class ArticlesController {
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/sqlite';
-import { Pageable, PageableResponse, PageFactory } from 'nestjs-mikro-orm-pageable';
+import { Pageable, PageableResponse, PageFactory } from '@mikro-orm/nestjs-paginate';
 import { ArticleEntity } from './article.entity';
 import { ArticleDto } from './dtos/article.dto.ts';
 
@@ -123,7 +123,7 @@ Use the `@ApiPageable` decorator for swagger integration:
 ```typescript
 // articles.controller.ts
 import { Controller, Get } from '@nestjs/common';
-import { PageableDefault } from 'nestjs-mikro-orm-pageable';
+import { PageableDefault } from '@mikro-orm/nestjs-paginate';
 import { ArticlesService } from './articles.service.ts';
 import { ArticleDto } from './dtos/article.dto.ts';
 
