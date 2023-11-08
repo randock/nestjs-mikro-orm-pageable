@@ -35,7 +35,7 @@ npm install @mikro-orm/nestjs-paginate
 ```typescript
 // articles.controller.ts
 import { Controller, Get } from '@nestjs/common';
-import { PageableDefault } from '@mikro-orm/nestjs-paginate';
+import { Paginate } from '@mikro-orm/nestjs-paginate';
 import { ArticlesService } from './articles.service.ts';
 import { ArticleDto } from './dtos/article.dto.ts';
 
@@ -44,7 +44,7 @@ export class ArticlesController {
     constructor(private articlesService: ArticlesService) {}
 
     @Get('/')
-    getArticles(@PageableDefault() pageable: Pageable): Promise<PageableResponse<ArticlesDto>> {
+    getArticles(@Paginate() pageable: PaginateQuery): Promise<PageableResponse<ArticlesDto>> {
         return this.articlesService.listArticles(pageable);
     }
 }
@@ -55,7 +55,7 @@ export class ArticlesController {
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/sqlite';
-import { Pageable, PageableResponse, PageFactory } from '@mikro-orm/nestjs-paginate';
+import { PaginateQuery, PageableResponse, PageFactory } from '@mikro-orm/nestjs-paginate';
 import { ArticleEntity } from './article.entity';
 import { ArticleDto } from './dtos/article.dto.ts';
 
@@ -63,13 +63,13 @@ import { ArticleDto } from './dtos/article.dto.ts';
 export class ArticlesService {
     constructor(@InjectRepository(ArticleEntity) private articleRepository: EntityRepository<ArticleEntity>) {}
     
-    async listArticles(pageable: Pageable): Promise<PageableResponse<ArticleDto>> {
+    async listArticles(pageable: PaginateQuery): Promise<PageableResponse<ArticleDto>> {
         return await new PageFactory(pageable, this.articleRepository).create();
     }
 }
 ```
 
-With `@PageableDefault`, you can now provide the below query parameters to `/articles`:
+With `@Paginate`, you can now provide the below query parameters to `/articles`:
 
 - page: the page number, starting from 1, e.g., `?page=1`
 - limit: the page size, default to 10, e.g., `?limit=20`
@@ -123,7 +123,7 @@ Use the `@ApiPageable` decorator for swagger integration:
 ```typescript
 // articles.controller.ts
 import { Controller, Get } from '@nestjs/common';
-import { PageableDefault } from '@mikro-orm/nestjs-paginate';
+import { Paginate } from '@mikro-orm/nestjs-paginate';
 import { ArticlesService } from './articles.service.ts';
 import { ArticleDto } from './dtos/article.dto.ts';
 
@@ -135,7 +135,7 @@ export class ArticlesController {
     @ApiPageable({
         dto: ArticleDto,
     }) 
-    getArticles(@PageableDefault() pageable: Pageable): Promise<PageableResponse<ArticlesDto>> {
+    getArticles(@Paginate() pageable: PaginateQuery): Promise<PageableResponse<ArticlesDto>> {
         return this.articlesService.listArticles(pageable);
     }
 }

@@ -5,7 +5,7 @@ import { isExpressRequest } from '../helpers';
 import type { Request as ExpressRequest } from 'express';
 import type { FastifyRequest } from 'fastify';
 
-export const PageableDefault = createParamDecorator((data: PageableQuery, ctx: ExecutionContext): ExtendedPageable => {
+export const Paginate = createParamDecorator((data: PageableQuery, ctx: ExecutionContext): ExtendedPageable => {
     const { currentPage: defaultPage, size: defaultSize, enableUnpaged, enableSize, enableSort, maxSize, limit, ...defaultData } = { ...defaultPageableOptions, ...data };
     const request: ExpressRequest | FastifyRequest = ctx.switchToHttp().getRequest();
 

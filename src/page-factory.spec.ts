@@ -1,7 +1,7 @@
 import { EntityRepository, SqlEntityRepository } from '@mikro-orm/knex';
 import { QueryOrder } from '@mikro-orm/core';
 import { PageFactory } from './page-factory';
-import { DriverName, Pageable } from './types';
+import { DriverName, PaginateQuery } from './types';
 
 type QbTestMethodMap = {
     select: jest.Mock;
@@ -16,7 +16,7 @@ type QbTestMethodMap = {
     getResultList: jest.Mock;
 };
 
-const defaultPageable: Pageable = {
+const defaultPageable: PaginateQuery = {
     currentPage: 0,
     size: 10,
     offset: 0,
@@ -26,7 +26,7 @@ const defaultPageable: Pageable = {
     sortBy: []
 };
 
-const pageableFactory = (values?: Partial<Pageable>): Pageable => ({
+const pageableFactory = (values?: Partial<PaginateQuery>): PaginateQuery => ({
     ...defaultPageable,
     ...values
 });
@@ -65,7 +65,7 @@ const mockRepoFactory = <T extends object = any>(values?: { count?: number; resu
 describe('PageFactory', () => {
     describe('the "create" method', () => {
         describe('with default pagination options', () => {
-            it('should create a Page object given a repository', async () => {
+            it('should create a Paginated object given a repository', async () => {
                 const [mockRepo] = mockRepoFactory();
                 const pageable = pageableFactory();
                 const page = await new PageFactory(pageable, mockRepo).create();
@@ -76,7 +76,7 @@ describe('PageFactory', () => {
             });
         });
         describe('with custom pagination options', () => {
-            it('should create a Page object given a repository', async () => {
+            it('should create a Paginated object given a repository', async () => {
                 const count = 20;
                 const resultList = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }];
                 const [mockRepo] = mockRepoFactory({

@@ -1,6 +1,6 @@
 import { EntityRepository, QueryBuilder } from '@mikro-orm/knex';
 import { Dictionary, QBFilterQuery } from '@mikro-orm/core';
-import { DriverName, ExtendedPageable, Page, Relation } from './types';
+import { DriverName, ExtendedPageable, Paginated, Relation } from './types';
 import { getAlias, getQBQueryOrderMap, getQueryUrlComponents } from './helpers';
 
 export type PageFactoryConfig<T extends object> = {
@@ -11,16 +11,18 @@ export type PageFactoryConfig<T extends object> = {
     where?: QBFilterQuery<T>;
 };
 
-export class PageFactory<TEntity extends object, TOutput extends object = TEntity, TPage = Page<TOutput>> {
+export class PageFactory<TEntity extends object, TOutput extends object = TEntity, TPage = Paginated<TOutput>> {
     protected driverName: DriverName | string;
     protected isEntityRepository: boolean;
+    protected readonly pageable: ExtendedPageable;
 
     constructor(
-        protected pageable: ExtendedPageable,
+        pageable: ExtendedPageable,
         protected repo: EntityRepository<TEntity> | QueryBuilder<TEntity>,
         protected _config: PageFactoryConfig<TEntity> = {},
         protected _map: (entity: TEntity & Dictionary) => TOutput & Dictionary = (entity) => entity as unknown as TOutput & Dictionary
     ) {
+        this.pageable = pageable;
         if (this.repo.constructor.name === 'QueryBuilder') {
             this.driverName = (this.repo as any).driver.constructor.name;
             this.isEntityRepository = false;
@@ -30,16 +32,16 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
         }
     }
 
-    map<TMappedOutput extends object, TMappedPage = Page<TMappedOutput>>(mapper: (entity: TEntity & Dictionary) => TMappedOutput): PageFactory<TEntity, TMappedOutput, TMappedPage> {
+    public map<TMappedOutput extends object, TMappedPage = Paginated<TMappedOutput>>(mapper: (entity: TEntity & Dictionary) => TMappedOutput): PageFactory<TEntity, TMappedOutput, TMappedPage> {
         return new PageFactory<TEntity, TMappedOutput, TMappedPage>(this.pageable, this.repo, this._config, mapper);
     }
 
-    config(config: PageFactoryConfig<TEntity>): PageFactory<TEntity, TOutput, TPage> {
+    public config(config: PageFactoryConfig<TEntity>): PageFactory<TEntity, TOutput, TPage> {
         this._config = config;
         return this;
     }
 
-    async create(): Promise<TPage> {
+    public async create(): Promise<TPage> {
         const { select, sortable, relations, where, alias } = this._config;
         const queryBuilder: QueryBuilder<TEntity> = this.isEntityRepository ? (this.repo as EntityRepository<TEntity>).createQueryBuilder(alias) : (this.repo as QueryBuilder<TEntity>);
         let { currentPage, offset, size, sortBy } = this.pageable;

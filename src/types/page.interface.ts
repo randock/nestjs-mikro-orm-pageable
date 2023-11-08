@@ -1,4 +1,4 @@
-import { Pageable } from './pageable.type';
+import { PaginateQuery } from './pageable.type';
 
 export interface Links {
     first?: string;
@@ -8,8 +8,8 @@ export interface Links {
     last?: string;
 }
 
-export interface Page<T extends object> {
+export interface Paginated<T extends object> {
     data: T[];
-    meta: Pageable;
+    meta: PaginateQuery;
     links: Links;
 }

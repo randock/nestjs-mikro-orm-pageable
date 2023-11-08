@@ -2,11 +2,11 @@ import * as request from 'supertest';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter, NestExpressApplication } from '@nestjs/platform-express';
 import { ApplicationModule } from './src/app.module';
-import { Pageable, Sort } from '../src';
+import { PaginateQuery, Sort } from '../src';
 import { makeTestData } from './src/testData';
 import { TestDto } from './src/test.dto';
 
-const defaultPageable: Pageable = {
+const defaultPageable: PaginateQuery = {
     currentPage: 1,
     offset: 0,
     size: 10,

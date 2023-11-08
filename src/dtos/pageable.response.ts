@@ -1,8 +1,8 @@
-import { Links, Page, Pageable } from '../types';
+import { Links, Paginated, PaginateQuery } from '../types';
 import { ApiProperty } from '@nestjs/swagger';
 import { defaultPageable } from '../constants';
 
-export class PageableResponse<T extends object> implements Page<T> {
+export class PageableResponse<T extends object> implements Paginated<T> {
     @ApiProperty()
     readonly data!: T[];
 
@@ -19,7 +19,7 @@ export class PageableResponse<T extends object> implements Page<T> {
         },
         example: defaultPageable
     })
-    readonly meta!: Pageable;
+    readonly meta!: PaginateQuery;
 
     @ApiProperty({
         type: 'object',

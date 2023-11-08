@@ -1,7 +1,7 @@
 import { CustomParamFactory } from '@nestjs/common/interfaces';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
-import { Pageable, PageableQuery } from '../types';
-import { PageableDefault } from './pageable-default.decorator';
+import { PaginateQuery, PageableQuery } from '../types';
+import { Paginate } from './paginate.decorator';
 import { DEFAULT_MAX_SIZE } from '../constants';
 
 function getParamDecoratorFactory<TData, TOutput>(decorator: Function): CustomParamFactory<TData, any, TOutput> {
@@ -12,7 +12,7 @@ function getParamDecoratorFactory<TData, TOutput>(decorator: Function): CustomPa
     return args[Object.keys(args)[0]].factory;
 }
 
-const decoratorFactory = getParamDecoratorFactory<Partial<PageableQuery>, Pageable>(PageableDefault);
+const decoratorFactory = getParamDecoratorFactory<Partial<PageableQuery>, PaginateQuery>(Paginate);
 
 function contextFactory(query: unknown) {
     return {
@@ -24,14 +24,15 @@ function contextFactory(query: unknown) {
     };
 }
 
-const defaultPageable: Pageable = {
+const defaultPageable: PaginateQuery = {
     currentPage: 1,
     size: 10,
     offset: 0,
     totalPages: 0,
     totalItems: 0,
     unpaged: false,
-    sortBy: []
+    sortBy: [],
+    path: ""
 };
 
 describe('PageableDefault', () => {

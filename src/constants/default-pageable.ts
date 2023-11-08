@@ -1,6 +1,6 @@
-import { Pageable } from '../types';
+import { PaginateQuery } from '../types';
 
-export const defaultPageable: Pageable = {
+export const defaultPageable: PaginateQuery = {
     currentPage: 1,
     size: 10,
     offset: 0,

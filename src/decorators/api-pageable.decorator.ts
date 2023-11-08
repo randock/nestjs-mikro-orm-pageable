@@ -8,7 +8,7 @@ export function ApiPageable(pageableOptions: PageableOptions & { dto?: Function 
     const { enableUnpaged, enableSize, enableSort, maxSize, dto } = { ...defaultPageableOptions, ...pageableOptions };
     const pattern = getPattern();
     return applyDecorators(
-        ApiQuery({ name: 'page', required: false, description: 'Page number (starting from 1)', schema: { type: 'integer', minimum: 0 } }),
+        ApiQuery({ name: 'page', required: false, description: 'Paginated number (starting from 1)', schema: { type: 'integer', minimum: 0 } }),
         enableSize ? ApiQuery({ name: 'size', required: false, description: 'Number of items on each page', schema: { type: 'integer', minimum: 0, maximum: maxSize } }) : () => {},
         enableSort
             ? ApiQuery({
@@ -22,7 +22,7 @@ export function ApiPageable(pageableOptions: PageableOptions & { dto?: Function 
         enableUnpaged ? ApiQuery({ name: 'unpaged', required: false, type: 'boolean', description: 'Set to true to retrieve all items without pagination' }) : () => {},
         ApiExtraModels(PageableResponse, dto ?? (() => {})),
         ApiOkResponse({
-            description: 'Page of items',
+            description: 'Paginated of items',
             schema: {
                 allOf: [{ $ref: getSchemaPath(PageableResponse) }, { properties: { data: { type: 'array', items: dto ? { $ref: getSchemaPath(dto) } : undefined } } }]
             }

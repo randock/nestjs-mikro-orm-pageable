@@ -1,6 +1,6 @@
 import { Sort } from './sort.type';
 
-export type Pageable<T extends Record<string, unknown> = NonNullable<unknown>> = {
+export type PaginateQuery<T extends Record<string, unknown> = NonNullable<unknown>> = {
     currentPage: number;
     size: number;
     offset: number;
@@ -11,4 +11,4 @@ export type Pageable<T extends Record<string, unknown> = NonNullable<unknown>> =
     path: string;
 } & T;
 
-export type ExtendedPageable = Pageable<{ limit?: number }>;
+export type ExtendedPageable = PaginateQuery<{ limit?: number }>;
