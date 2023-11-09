@@ -1,8 +1,8 @@
 import { Links, Paginated, PaginateQuery } from '../types';
 import { ApiProperty } from '@nestjs/swagger';
-import { defaultPageable } from '../constants';
+import { defaultPaginate } from '../constants';
 
-export class PageableResponse<T extends object> implements Paginated<T> {
+export class PaginateResponse<T extends object> implements Paginated<T> {
     @ApiProperty()
     readonly data!: T[];
 
@@ -17,7 +17,7 @@ export class PageableResponse<T extends object> implements Paginated<T> {
             totalItems: { type: 'integer', minimum: 0 },
             sortBy: { type: 'array', items: { type: 'object' } }
         },
-        example: defaultPageable
+        example: defaultPaginate
     })
     readonly meta!: PaginateQuery;
 

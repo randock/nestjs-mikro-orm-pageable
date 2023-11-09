@@ -1,8 +1,9 @@
 import { CustomParamFactory } from '@nestjs/common/interfaces';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
-import { PaginateQuery, PageableQuery } from '../types';
+import { PaginateDataQuery, PaginateQuery } from '../types';
 import { Paginate } from './paginate.decorator';
 import { DEFAULT_MAX_SIZE } from '../constants';
+import { QueryOrder } from '@mikro-orm/core';
 
 function getParamDecoratorFactory<TData, TOutput>(decorator: Function): CustomParamFactory<TData, any, TOutput> {
     class Test {
@@ -12,7 +13,7 @@ function getParamDecoratorFactory<TData, TOutput>(decorator: Function): CustomPa
     return args[Object.keys(args)[0]].factory;
 }
 
-const decoratorFactory = getParamDecoratorFactory<Partial<PageableQuery>, PaginateQuery>(Paginate);
+const decoratorFactory = getParamDecoratorFactory<Partial<PaginateDataQuery>, PaginateQuery>(Paginate);
 
 function contextFactory(query: unknown) {
     return {
@@ -59,7 +60,7 @@ describe('PageableDefault', () => {
                 sortBy: [
                     {
                         property: 'test',
-                        direction: 'asc',
+                        direction: QueryOrder.asc,
                         nullsFirst: true
                     }
                 ]

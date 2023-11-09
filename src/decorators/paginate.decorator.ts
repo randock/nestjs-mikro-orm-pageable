@@ -1,16 +1,17 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { PageableQuery, Sort, ExtendedPageable } from '../types';
-import { defaultPageable, defaultPageableOptions, sortRegex } from '../constants';
+import { PaginateDataQuery, Sort, ExtendedPaginateQuery } from '../types';
+import { defaultPaginate, defaultPaginateOptions, sortRegex } from '../constants';
 import { isExpressRequest } from '../helpers';
 import type { Request as ExpressRequest } from 'express';
 import type { FastifyRequest } from 'fastify';
+import { QueryOrder } from '@mikro-orm/core';
 
-export const Paginate = createParamDecorator((data: PageableQuery, ctx: ExecutionContext): ExtendedPageable => {
-    const { currentPage: defaultPage, size: defaultSize, enableUnpaged, enableSize, enableSort, maxSize, limit, ...defaultData } = { ...defaultPageableOptions, ...data };
+export const Paginate = createParamDecorator((data: PaginateDataQuery, ctx: ExecutionContext): ExtendedPaginateQuery => {
+    const { currentPage: defaultPage, size: defaultSize, enableUnpaged, enableSize, enableSort, maxSize, limit, ...defaultData } = { ...defaultPaginateOptions, ...data };
     const request: ExpressRequest | FastifyRequest = ctx.switchToHttp().getRequest();
 
-    const pageable: ExtendedPageable = {
-        ...defaultPageable,
+    const pageable: ExtendedPaginateQuery = {
+        ...defaultPaginate,
         ...defaultData
     };
 
@@ -131,7 +132,7 @@ function maybeParseSortParam(param: unknown): Sort[] | undefined {
 function maybeParseSortString(sortString: string): Sort | undefined {
     const parts = sortString.split(';');
     let property: string | undefined;
-    let direction: 'asc' | 'desc' | undefined;
+    let direction: QueryOrder.asc | QueryOrder.desc | undefined;
     let nullsFirst: boolean | undefined = undefined;
     parts.forEach((part) => {
         const propertyMatch = part.match(sortRegex.property);
@@ -141,7 +142,7 @@ function maybeParseSortString(sortString: string): Sort | undefined {
         }
         const directionMatch = part.match(sortRegex.direction);
         if (directionMatch) {
-            direction = directionMatch.groups?.direction as 'asc' | 'desc';
+            direction = directionMatch.groups?.direction as QueryOrder.asc | QueryOrder.desc;
             return;
         }
         const nullsFirstMatch = part.match(sortRegex.nullsFirst);

@@ -35,7 +35,7 @@ npm install @mikro-orm/nestjs-paginate
 ```typescript
 // articles.controller.ts
 import { Controller, Get } from '@nestjs/common';
-import { Paginate } from '@mikro-orm/nestjs-paginate';
+import { Paginate, PaginateResponse } from '@mikro-orm/nestjs-paginate';
 import { ArticlesService } from './articles.service.ts';
 import { ArticleDto } from './dtos/article.dto.ts';
 
@@ -44,8 +44,8 @@ export class ArticlesController {
     constructor(private articlesService: ArticlesService) {}
 
     @Get('/')
-    getArticles(@Paginate() pageable: PaginateQuery): Promise<PageableResponse<ArticlesDto>> {
-        return this.articlesService.listArticles(pageable);
+    getArticles(@Paginate() query: PaginateQuery): Promise<PaginateResponse<ArticlesDto>> {
+        return this.articlesService.listArticles(query);
     }
 }
 ```
@@ -55,7 +55,7 @@ export class ArticlesController {
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/sqlite';
-import { PaginateQuery, PageableResponse, PageFactory } from '@mikro-orm/nestjs-paginate';
+import { PaginateQuery, PaginateResponse, PageFactory } from '@mikro-orm/nestjs-paginate';
 import { ArticleEntity } from './article.entity';
 import { ArticleDto } from './dtos/article.dto.ts';
 
@@ -63,8 +63,8 @@ import { ArticleDto } from './dtos/article.dto.ts';
 export class ArticlesService {
     constructor(@InjectRepository(ArticleEntity) private articleRepository: EntityRepository<ArticleEntity>) {}
     
-    async listArticles(pageable: PaginateQuery): Promise<PageableResponse<ArticleDto>> {
-        return await new PageFactory(pageable, this.articleRepository).create();
+    async listArticles(query: PaginateQuery): Promise<PaginateResponse<ArticleDto>> {
+        return await new PageFactory(query, this.articleRepository).create();
     }
 }
 ```
@@ -118,12 +118,12 @@ An example of the response shape is shown as below:
 
 ### Swagger support
 
-Use the `@ApiPageable` decorator for swagger integration:
+Use the `@ApiPaginate` decorator for swagger integration:
 
 ```typescript
 // articles.controller.ts
 import { Controller, Get } from '@nestjs/common';
-import { Paginate } from '@mikro-orm/nestjs-paginate';
+import { ApiPaginate, Paginate } from '@mikro-orm/nestjs-paginate';
 import { ArticlesService } from './articles.service.ts';
 import { ArticleDto } from './dtos/article.dto.ts';
 
@@ -132,11 +132,11 @@ export class ArticlesController {
     constructor(private articlesService: ArticlesService) {}
     
     @Get('/') 
-    @ApiPageable({
+    @ApiPaginate({
         dto: ArticleDto,
     }) 
-    getArticles(@Paginate() pageable: PaginateQuery): Promise<PageableResponse<ArticlesDto>> {
-        return this.articlesService.listArticles(pageable);
+    getArticles(@Paginate() query: PaginateQuery): Promise<PaginateResponse<ArticlesDto>> {
+        return this.articlesService.listArticles(query);
     }
 }
 ```

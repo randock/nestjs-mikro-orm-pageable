@@ -1,25 +1,17 @@
 import { EntityRepository, QueryBuilder } from '@mikro-orm/knex';
-import { Dictionary, QBFilterQuery } from '@mikro-orm/core';
-import { DriverName, ExtendedPageable, Paginated, Relation } from './types';
+import { Dictionary } from '@mikro-orm/core';
+import { DriverName, ExtendedPaginateQuery, PaginateConfig, Paginated, Relation } from './types';
 import { getAlias, getQBQueryOrderMap, getQueryUrlComponents } from './helpers';
-
-export type PageFactoryConfig<T extends object> = {
-    alias?: string;
-    sortable?: (Extract<keyof T, string> | string)[] | null;
-    select?: Extract<keyof T, string> | string | (Extract<keyof T, string> | string)[];
-    relations?: Relation | Relation[];
-    where?: QBFilterQuery<T>;
-};
 
 export class PageFactory<TEntity extends object, TOutput extends object = TEntity, TPage = Paginated<TOutput>> {
     protected driverName: DriverName | string;
     protected isEntityRepository: boolean;
-    protected readonly pageable: ExtendedPageable;
+    protected readonly pageable: ExtendedPaginateQuery;
 
     constructor(
-        pageable: ExtendedPageable,
+        pageable: ExtendedPaginateQuery,
         protected repo: EntityRepository<TEntity> | QueryBuilder<TEntity>,
-        protected _config: PageFactoryConfig<TEntity> = {},
+        protected _config: PaginateConfig<TEntity> = {},
         protected _map: (entity: TEntity & Dictionary) => TOutput & Dictionary = (entity) => entity as unknown as TOutput & Dictionary
     ) {
         this.pageable = pageable;
@@ -36,7 +28,7 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
         return new PageFactory<TEntity, TMappedOutput, TMappedPage>(this.pageable, this.repo, this._config, mapper);
     }
 
-    public config(config: PageFactoryConfig<TEntity>): PageFactory<TEntity, TOutput, TPage> {
+    public config(config: PaginateConfig<TEntity>): PageFactory<TEntity, TOutput, TPage> {
         this._config = config;
         return this;
     }

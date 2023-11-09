@@ -1,5 +1,5 @@
 import type { Request as ExpressRequest } from 'express';
-import { DriverName, Sort, SortDirection } from './types';
+import { DriverName, Sort } from './types';
 import { QBQueryOrderMap, QueryOrder } from '@mikro-orm/core';
 
 export function isRecord(data: unknown): data is Record<string, unknown> {
@@ -33,7 +33,7 @@ export function getQBQueryOrderMap<TEntity extends object>(sortBy: Sort[], drive
         return sortBy.reduce(
             (acc, s) => ({
                 ...acc,
-                ...(s.nullsFirst !== undefined && { [`ISNULL(${s.property})`]: s.nullsFirst ? 'DESC' : 'ASC' }),
+                ...(s.nullsFirst !== undefined && { [`ISNULL(${s.property})`]: s.nullsFirst ? QueryOrder.DESC : QueryOrder.ASC }),
                 [s.property]: s.direction
             }),
             {} as QBQueryOrderMap<TEntity>
@@ -48,9 +48,15 @@ export function getQBQueryOrderMap<TEntity extends object>(sortBy: Sort[], drive
     );
 }
 
-export function getQueryOrder(direction: SortDirection, nullsFirst?: boolean): QueryOrder {
+export function getQueryOrder(direction: QueryOrder.asc | QueryOrder.desc, nullsFirst?: boolean): QueryOrder {
     if (nullsFirst === undefined) {
-        return direction === 'asc' ? QueryOrder.ASC : QueryOrder.DESC;
+        return direction === QueryOrder.asc ? QueryOrder.ASC : QueryOrder.DESC;
     }
-    return nullsFirst ? (direction === 'asc' ? QueryOrder.ASC_NULLS_FIRST : QueryOrder.DESC_NULLS_FIRST) : direction === 'asc' ? QueryOrder.ASC_NULLS_LAST : QueryOrder.DESC_NULLS_LAST;
+    return nullsFirst
+        ? direction === QueryOrder.asc
+            ? QueryOrder.ASC_NULLS_FIRST
+            : QueryOrder.DESC_NULLS_FIRST
+        : direction === QueryOrder.asc
+        ? QueryOrder.ASC_NULLS_LAST
+        : QueryOrder.DESC_NULLS_LAST;
 }

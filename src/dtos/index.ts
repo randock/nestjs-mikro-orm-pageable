@@ -1,1 +1,1 @@
-export * from './pageable.response';
+export * from './paginate.response';

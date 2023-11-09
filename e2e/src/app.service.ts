@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { TestEntity } from './test.entity';
 import { EntityRepository } from '@mikro-orm/sqlite';
-import { PaginateQuery, PageableResponse, PageFactory } from '../../src';
+import { PaginateQuery, PaginateResponse, PageFactory } from '../../src';
 import { TestDto } from './test.dto';
 
 @Injectable()
 export class AppService {
     constructor(@InjectRepository(TestEntity) private readonly testRepository: EntityRepository<TestEntity>) {}
 
-    async listTests(pageable: PaginateQuery): Promise<PageableResponse<TestDto>> {
+    async listTests(pageable: PaginateQuery): Promise<PaginateResponse<TestDto>> {
         return await new PageFactory(pageable, this.testRepository)
             .map((test) => ({
                 ...test,
