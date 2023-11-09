@@ -9,3 +9,6 @@ dist
 
 # misc
 .eslintcache
+
+# JetBrains
+.idea

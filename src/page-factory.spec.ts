@@ -23,7 +23,8 @@ const defaultPageable: PaginateQuery = {
     totalPages: 0,
     totalItems: 0,
     unpaged: false,
-    sortBy: []
+    sortBy: [],
+    path: "",
 };
 
 const pageableFactory = (values?: Partial<PaginateQuery>): PaginateQuery => ({
