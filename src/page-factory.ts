@@ -75,7 +75,8 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
 
         sortBy = sortBy.filter((s) => sortable?.includes(s.property) ?? true);
 
-        queryBuilder.orderBy(getQBQueryOrderMap(sortBy, this.driverName));
+        // TODO: This is generating an issue when using query builder, it order not correctly
+        // queryBuilder.orderBy(getQBQueryOrderMap(sortBy, this.driverName));
 
         if (!unpaged) {
             const difference = offset + size - totalItems;
