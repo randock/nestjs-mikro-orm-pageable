@@ -1,7 +1,7 @@
 {
-    "name": "@mikro-orm/nestjs-paginate",
-    "version": "0.0.1",
-    "description": "Pageable library for MikroORM repositories in Nest.js",
+    "name": "@emulienfou/nestjs-mikro-orm-paginate",
+    "version": "0.1.0",
+    "description": "A query package for convenient pagination, filtering and sorting implementation with MikroORM repositories in Nest.js.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
@@ -15,7 +15,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/ctfdavis/nestjs-mikro-orm-pageable.git"
+        "url": "git+https://github.com/emulienfou/nestjs-mikro-orm-pageable.git"
     },
     "keywords": [
         "nestjs",
@@ -25,11 +25,18 @@
         "sorting"
     ],
     "author": "Davis Chan <davis.chan@aol.com>",
+    "contributors": [
+      {
+        "name": "David Sanchez",
+        "email": "david38sanchez@gmail.com",
+        "url": "https://davidsanchez.me"
+      }
+    ],
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/ctfdavis/nestjs-mikro-orm-pageable/issues"
+        "url": "https://github.com/emulienfou/nestjs-mikro-orm-pageable/issues"
     },
-    "homepage": "https://github.com/ctfdavis/nestjs-mikro-orm-pageable#readme",
+    "homepage": "https://github.com/emulienfou/nestjs-mikro-orm-pageable#readme",
     "publishConfig": {
         "access": "public"
     },

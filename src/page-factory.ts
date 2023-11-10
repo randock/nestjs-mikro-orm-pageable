@@ -1,20 +1,21 @@
 import { EntityRepository, QueryBuilder } from '@mikro-orm/knex';
 import { Dictionary } from '@mikro-orm/core';
 import { DriverName, ExtendedPaginateQuery, PaginateConfig, Paginated, Relation } from './types';
-import { getAlias, getQBQueryOrderMap, getQueryUrlComponents } from './helpers';
+import { getAlias, getQueryUrlComponents } from './helpers';
+import { addFilter } from './filter';
 
 export class PageFactory<TEntity extends object, TOutput extends object = TEntity, TPage = Paginated<TOutput>> {
     protected driverName: DriverName | string;
     protected isEntityRepository: boolean;
-    protected readonly pageable: ExtendedPaginateQuery;
+    protected readonly query: ExtendedPaginateQuery;
 
     constructor(
-        pageable: ExtendedPaginateQuery,
+        query: ExtendedPaginateQuery,
         protected repo: EntityRepository<TEntity> | QueryBuilder<TEntity>,
         protected _config: PaginateConfig<TEntity> = {},
         protected _map: (entity: TEntity & Dictionary) => TOutput & Dictionary = (entity) => entity as unknown as TOutput & Dictionary
     ) {
-        this.pageable = pageable;
+        this.query = query;
         if (this.repo.constructor.name === 'QueryBuilder') {
             this.driverName = (this.repo as any).driver.constructor.name;
             this.isEntityRepository = false;
@@ -25,7 +26,7 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
     }
 
     public map<TMappedOutput extends object, TMappedPage = Paginated<TMappedOutput>>(mapper: (entity: TEntity & Dictionary) => TMappedOutput): PageFactory<TEntity, TMappedOutput, TMappedPage> {
-        return new PageFactory<TEntity, TMappedOutput, TMappedPage>(this.pageable, this.repo, this._config, mapper);
+        return new PageFactory<TEntity, TMappedOutput, TMappedPage>(this.query, this.repo, this._config, mapper);
     }
 
     public config(config: PaginateConfig<TEntity>): PageFactory<TEntity, TOutput, TPage> {
@@ -36,8 +37,8 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
     public async create(): Promise<TPage> {
         const { select, sortable, relations, where, alias } = this._config;
         const queryBuilder: QueryBuilder<TEntity> = this.isEntityRepository ? (this.repo as EntityRepository<TEntity>).createQueryBuilder(alias) : (this.repo as QueryBuilder<TEntity>);
-        let { currentPage, offset, size, sortBy } = this.pageable;
-        const { unpaged, limit } = this.pageable;
+        let { currentPage, offset, size, sortBy } = this.query;
+        const { unpaged, limit, filter } = this.query;
         if (unpaged) {
             currentPage = 0;
             offset = 0;
@@ -65,6 +66,10 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
             totalItems = Math.min(totalItems, limit);
         }
 
+        if (Object.keys(filter).length) {
+            addFilter<TEntity>(queryBuilder, this.query);
+        }
+
         sortBy = sortBy.filter((s) => sortable?.includes(s.property) ?? true);
 
         // TODO: This is generating an issue when using query builder, it order not correctly
@@ -75,7 +80,7 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
             queryBuilder.offset(offset).limit(size - (difference > 0 ? difference : 0));
         }
 
-        const { queryOrigin, queryPath } = getQueryUrlComponents(this.pageable.path);
+        const { queryOrigin, queryPath } = getQueryUrlComponents(this.query.path);
         const path: string = queryOrigin + queryPath;
 
         const result = await queryBuilder.getResultList();
@@ -94,7 +99,8 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
                 unpaged,
                 totalPages,
                 totalItems,
-                sortBy
+                sortBy,
+                filter
             },
             links: {
                 first: currentPage == 1 ? undefined : buildLink(1),

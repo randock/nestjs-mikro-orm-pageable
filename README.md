@@ -2,20 +2,24 @@
   <h1> NestJS Mikro-ORM Paginate </h1>
 </div>
 
-A pageable package for convenient pagination and sorting implementation with MikroORM repositories in Nest.js.
+A query package for convenient pagination, filtering and sorting implementation with [MikroORM](https://mikro-orm.io)
+repositories in [Nest.js](https://nestjs.com).
 
 ## Features
 
-- sort by multiple fields
-- sort by nulls first or last
-- unpaged response (i.e., disabling pagination)
-- various pagination behavior and constraints configuration
+- Pagination conforms to [JSON:API](https://jsonapi.org)
+- Sort by multiple fields
+- Sort by nulls first or last
+- Unpaged response (i.e., disabling pagination)
+- Various pagination behavior and constraints configuration
+- Filter using
+  operators (`$eq`, `$in`, `$nin`, `$gt`, `$gte`, `$lt`, `$lte`, `$ne`, `$not`, `$like`, `$re`, `$fulltext`, `$exists`, `$ilike`, `$overlap`, `$contains`, `$contained`)
 
 ## Limitations
 
-- only work with Rest API
-- only support MySQL, MariaDB, PostgreSQL and SQLite
-- only support offset pagination
+- Only work with Rest API
+- Only support MySQL, MariaDB, PostgreSQL and SQLite
+- Only support offset pagination
 
 ## Guide
 
@@ -23,11 +27,17 @@ A pageable package for convenient pagination and sorting implementation with Mik
 
 - \>= Nest.js 8.0.0
 - \>= MikroORM 5.0.0
+- \>= Typescript 5.0.0
 
 ### Installation
 
 ```bash
-npm install @mikro-orm/nestjs-paginate
+# With Yarn
+yarn add @emulienfou/nestjs-mikro-orm-paginate
+# With NPM
+npm install @emulienfou/nestjs-mikro-orm-paginate
+# With PNPM
+pnpm add @emulienfou/nestjs-mikro-orm-paginate
 ```
 
 ### Basic Usage
@@ -35,18 +45,19 @@ npm install @mikro-orm/nestjs-paginate
 ```typescript
 // articles.controller.ts
 import { Controller, Get } from '@nestjs/common';
-import { Paginate, PaginateResponse } from '@mikro-orm/nestjs-paginate';
+import { Paginate, PaginateResponse } from '@emulienfou/nestjs-mikro-orm-paginate';
 import { ArticlesService } from './articles.service.ts';
 import { ArticleDto } from './dtos/article.dto.ts';
 
 @Controller('/articles')
 export class ArticlesController {
-    constructor(private articlesService: ArticlesService) {}
+  constructor(private articlesService: ArticlesService) {
+  }
 
-    @Get('/')
-    getArticles(@Paginate() query: PaginateQuery): Promise<PaginateResponse<ArticlesDto>> {
-        return this.articlesService.listArticles(query);
-    }
+  @Get('/')
+  getArticles(@Paginate() query: PaginateQuery): Promise<PaginateResponse<ArticlesDto>> {
+    return this.articlesService.listArticles(query);
+  }
 }
 ```
 
@@ -55,17 +66,18 @@ export class ArticlesController {
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { EntityRepository } from '@mikro-orm/sqlite';
-import { PaginateQuery, PaginateResponse, PageFactory } from '@mikro-orm/nestjs-paginate';
+import { PaginateQuery, PaginateResponse, PageFactory } from '@emulienfou/nestjs-mikro-orm-paginate';
 import { ArticleEntity } from './article.entity';
 import { ArticleDto } from './dtos/article.dto.ts';
 
 @Injectable()
 export class ArticlesService {
-    constructor(@InjectRepository(ArticleEntity) private articleRepository: EntityRepository<ArticleEntity>) {}
-    
-    async listArticles(query: PaginateQuery): Promise<PaginateResponse<ArticleDto>> {
-        return await new PageFactory(query, this.articleRepository).create();
-    }
+  constructor(@InjectRepository(ArticleEntity) private articleRepository: EntityRepository<ArticleEntity>) {
+  }
+
+  async listArticles(query: PaginateQuery): Promise<PaginateResponse<ArticleDto>> {
+    return await new PageFactory(query, this.articleRepository).create();
+  }
 }
 ```
 
@@ -75,6 +87,7 @@ With `@Paginate`, you can now provide the below query parameters to `/articles`:
 - limit: the page size, default to 10, e.g., `?limit=20`
 - sort: the sort expression, e.g., `?sort=property[field1];direction[asc];nulls-first[true]`
 - unpaged: whether to disable pagination, default to false, e.g., `?unpaged=true`
+- filter:
 
 ### Response Shape
 
@@ -104,7 +117,8 @@ An example of the response shape is shown as below:
         "nullsFirst": false
       }
     ],
-    "unpaged": false
+    "unpaged": false,
+    "filter": {}
   },
   "links": {
     "first": "http://localhost:3000/cats?limit=5&page=1&sortBy=color:DESC&search=i&filter.age=$gte:3",
@@ -123,20 +137,21 @@ Use the `@ApiPaginate` decorator for swagger integration:
 ```typescript
 // articles.controller.ts
 import { Controller, Get } from '@nestjs/common';
-import { ApiPaginate, Paginate } from '@mikro-orm/nestjs-paginate';
+import { ApiPaginate, Paginate } from '@emulienfou/nestjs-mikro-orm-paginate';
 import { ArticlesService } from './articles.service.ts';
 import { ArticleDto } from './dtos/article.dto.ts';
 
 @Controller('/articles')
 export class ArticlesController {
-    constructor(private articlesService: ArticlesService) {}
-    
-    @Get('/') 
-    @ApiPaginate({
-        dto: ArticleDto,
-    }) 
-    getArticles(@Paginate() query: PaginateQuery): Promise<PaginateResponse<ArticlesDto>> {
-        return this.articlesService.listArticles(query);
-    }
+  constructor(private articlesService: ArticlesService) {
+  }
+
+  @Get('/')
+  @ApiPaginate({
+    dto: ArticleDto,
+  })
+  getArticles(@Paginate() query: PaginateQuery): Promise<PaginateResponse<ArticlesDto>> {
+    return this.articlesService.listArticles(query);
+  }
 }
 ```

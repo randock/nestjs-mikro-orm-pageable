@@ -1,4 +1,5 @@
 import { QBFilterQuery, QueryOrder } from '@mikro-orm/core';
+import { GroupOperator, QueryOperator } from '@mikro-orm/core/enums';
 
 export type DriverName = 'PostgreSqlDriver' | 'MySqlDriver' | 'MariaDbDriver' | 'SqliteDriver';
 
@@ -19,6 +20,7 @@ export type PaginateQuery<T extends Record<string, unknown> = NonNullable<unknow
     totalItems: number;
     sortBy: Sort[];
     path: string;
+    filter: { [column: string]: string | string[] };
 } & T;
 
 export type ExtendedPaginateQuery = PaginateQuery<{ limit?: number }>;
@@ -61,3 +63,29 @@ export type PaginateConfig<T extends object> = {
     relations?: Relation | Relation[];
     where?: QBFilterQuery<T>;
 };
+
+export type ColumnProperties = { propertyPath?: string; propertyName: string; isNested: boolean; column: string };
+
+export interface FilterToken {
+    comparator: GroupOperator;
+    suffix?: QueryOperator;
+    operator: QueryOperator;
+    value: string | undefined;
+}
+
+export type FindOperator = {
+    type: string;
+    value: string | string[] | Date;
+};
+
+export type Filter = {
+    comparator: GroupOperator;
+    findOperator: FindOperator | undefined;
+};
+
+export type ColumnsFilters = { [columnName: string]: Filter[] };
+
+export interface PredicateOperator {
+    operator: string | undefined;
+    parameters: string[];
+}

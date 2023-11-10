@@ -10,16 +10,16 @@ export const Paginate = createParamDecorator((data: PaginateDataQuery, ctx: Exec
     const { currentPage: defaultPage, size: defaultSize, enableUnpaged, enableSize, enableSort, maxSize, limit, ...defaultData } = { ...defaultPaginateOptions, ...data };
     const request: ExpressRequest | FastifyRequest = ctx.switchToHttp().getRequest();
 
-    const pageable: ExtendedPaginateQuery = {
+    const paginateQuery: ExtendedPaginateQuery = {
         ...defaultPaginate,
         ...defaultData
     };
 
     if (!hasQuery(request)) {
-        return pageable;
+        return paginateQuery;
     }
 
-    const { query } = request;
+    const query = request.query as ExtendedPaginateQuery;
 
     // Determine if Express or Fastify to rebuild the original url and reduce down to protocol, host and base url
     let originalUrl: string;
@@ -29,10 +29,10 @@ export const Paginate = createParamDecorator((data: PaginateDataQuery, ctx: Exec
         originalUrl = request.protocol + '://' + request.hostname + request.url;
     }
     const urlParts = new URL(originalUrl);
-    pageable.path = urlParts.protocol + '//' + urlParts.host + urlParts.pathname;
+    paginateQuery.path = urlParts.protocol + '//' + urlParts.host + urlParts.pathname;
 
     const parsedPageInt = hasParam(query, 'page') ? maybeParseIntParam(query.page) : undefined;
-    const page = isSafePositiveInteger(parsedPageInt) ? parsedPageInt : isSafePositiveInteger(defaultPage) ? defaultPage : pageable.currentPage;
+    const page = isSafePositiveInteger(parsedPageInt) ? parsedPageInt : isSafePositiveInteger(defaultPage) ? defaultPage : paginateQuery.currentPage;
     const pageIndex = page - 1;
 
     const parsedSizeInt = enableSize && hasParam(query, 'limit') ? maybeParseIntParam(query.limit) : undefined;
@@ -41,8 +41,8 @@ export const Paginate = createParamDecorator((data: PaginateDataQuery, ctx: Exec
             ? parsedSizeInt
             : isSafePositiveInteger(defaultSize) && defaultSize <= maxSize
             ? defaultSize
-            : pageable.size <= maxSize
-            ? pageable.size
+            : paginateQuery.size <= maxSize
+            ? paginateQuery.size
             : maxSize;
 
     let offset: number | undefined = pageIndex * size;
@@ -51,30 +51,38 @@ export const Paginate = createParamDecorator((data: PaginateDataQuery, ctx: Exec
     }
 
     if (offset !== undefined) {
-        pageable.currentPage = page;
-        pageable.size = size;
-        pageable.offset = offset;
+        paginateQuery.currentPage = page;
+        paginateQuery.size = size;
+        paginateQuery.offset = offset;
     }
 
     if (enableSort && hasParam(query, 'sortBy')) {
         const parsedSort = maybeParseSortParam(query.sortBy);
         if (parsedSort) {
-            pageable.sortBy = parsedSort;
+            paginateQuery.sortBy = parsedSort;
         }
     }
 
     if (enableUnpaged && hasParam(query, 'unpaged')) {
         const parsedBool = maybeParseBoolParam(query.unpaged);
         if (parsedBool !== undefined) {
-            pageable.unpaged = parsedBool;
+            paginateQuery.unpaged = parsedBool;
         }
     }
 
     if (limit !== null) {
-        pageable.limit = limit;
+        paginateQuery.limit = limit;
     }
 
-    return pageable;
+    if (Object.keys(query).some((k) => k.startsWith('filter.'))) {
+        paginateQuery.filter = Object.fromEntries(
+            Object.entries(query)
+                .filter(([key]) => key.startsWith('filter.'))
+                .map(([k, v]) => [k.replace('filter.', ''), v])
+        ) as Record<string, string | string[]>;
+    }
+
+    return paginateQuery;
 });
 
 function hasQuery(request: unknown): request is { query: unknown } {

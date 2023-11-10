@@ -8,7 +8,8 @@ export const defaultPaginate: PaginateQuery = {
     totalItems: 0,
     unpaged: false,
     sortBy: [],
-    path: ''
+    path: '',
+    filter: {}
 };
 
 export const DEFAULT_MAX_SIZE = 100;
