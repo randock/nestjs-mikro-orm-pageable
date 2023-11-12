@@ -1,7 +1,7 @@
 import { EntityRepository, QueryBuilder } from '@mikro-orm/knex';
 import { Dictionary } from '@mikro-orm/core';
 import { DriverName, ExtendedPaginateQuery, PaginateConfig, Paginated, Relation } from './types';
-import { getAlias, getQueryUrlComponents } from './helpers';
+import { getAlias } from './helpers';
 import { addFilter } from './filter';
 
 export class PageFactory<TEntity extends object, TOutput extends object = TEntity, TPage = Paginated<TOutput>> {
@@ -37,12 +37,11 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
     public async create(): Promise<TPage> {
         const { select, sortable, relations, where, alias } = this._config;
         const queryBuilder: QueryBuilder<TEntity> = this.isEntityRepository ? (this.repo as EntityRepository<TEntity>).createQueryBuilder(alias) : (this.repo as QueryBuilder<TEntity>);
-        let { currentPage, offset, size, sortBy } = this.query;
-        const { unpaged, limit, filter } = this.query;
-        if (unpaged) {
-            currentPage = 0;
-            offset = 0;
-            size = 0;
+
+        if (this.query.unpaged) {
+            this.query.currentPage = 0;
+            this.query.offset = 0;
+            this.query.size = 0;
         }
 
         if (undefined !== select) {
@@ -59,55 +58,56 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
             queryBuilder.where(where);
         }
 
-        let totalItems = await queryBuilder.getCount();
-
-        if (limit !== undefined) {
-            queryBuilder.limit(limit);
-            totalItems = Math.min(totalItems, limit);
-        }
-
-        if (Object.keys(filter).length) {
+        if (Object.keys(this.query.filter).length) {
             addFilter<TEntity>(queryBuilder, this.query);
         }
 
-        sortBy = sortBy.filter((s) => sortable?.includes(s.property) ?? true);
+        let totalItems = await queryBuilder.getCount();
+
+        if (this.query.limit !== undefined) {
+            queryBuilder.limit(this.query.limit);
+            totalItems = Math.min(totalItems, this.query.limit);
+        }
+
+        this.query.sortBy = this.query.sortBy.filter((s) => sortable?.includes(s.property) ?? true);
 
         // TODO: This is generating an issue when using query builder, it order not correctly
         // queryBuilder.orderBy(getQBQueryOrderMap(sortBy, this.driverName));
 
-        if (!unpaged) {
-            const difference = offset + size - totalItems;
-            queryBuilder.offset(offset).limit(size - (difference > 0 ? difference : 0));
+        if (!this.query.unpaged) {
+            const difference = this.query.offset + this.query.size - totalItems;
+            queryBuilder.offset(this.query.offset).limit(this.query.size - (difference > 0 ? difference : 0));
         }
-
-        const { queryOrigin, queryPath } = getQueryUrlComponents(this.query.path);
-        const path: string = queryOrigin + queryPath;
 
         const result = await queryBuilder.getResultList();
         const data = result.map(this._map);
-        const totalPages = Math.ceil(totalItems / size);
+        const totalPages = Math.ceil(totalItems / this.query.size);
 
-        const options = `&limit=${size}`;
-        const buildLink = (p: number): string => path + '?page=' + p + options;
+        const url: URL = this.query.url as URL;
+        url.searchParams.set('limit', this.query.size.toString());
+        const buildLink = (p: number): string => {
+            url.searchParams.set('page', p.toString());
+            return url.toString();
+        };
 
         return {
             data,
             meta: {
-                currentPage,
-                offset,
-                size,
-                unpaged,
+                currentPage: this.query.currentPage,
+                offset: this.query.offset,
+                size: this.query.size,
+                unpaged: this.query.unpaged,
                 totalPages,
                 totalItems,
-                sortBy,
-                filter
+                sortBy: this.query.sortBy,
+                filter: this.query.filter
             },
             links: {
-                first: currentPage == 1 ? undefined : buildLink(1),
-                previous: currentPage - 1 < 1 ? undefined : buildLink(currentPage - 1),
-                current: buildLink(currentPage),
-                next: currentPage + 1 > totalPages ? undefined : buildLink(currentPage + 1),
-                last: currentPage == totalPages || !totalItems ? undefined : buildLink(totalPages)
+                first: this.query.currentPage == 1 ? undefined : buildLink(1),
+                previous: this.query.currentPage - 1 < 1 ? undefined : buildLink(this.query.currentPage - 1),
+                current: buildLink(this.query.currentPage),
+                next: this.query.currentPage + 1 > totalPages ? undefined : buildLink(this.query.currentPage + 1),
+                last: this.query.currentPage == totalPages || !totalItems ? undefined : buildLink(totalPages)
             }
         } as TPage;
     }

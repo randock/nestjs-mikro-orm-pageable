@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { PaginateDataQuery, Sort, ExtendedPaginateQuery } from '../types';
+import { ExtendedPaginateQuery, PaginateDataQuery, Sort } from '../types';
 import { defaultPaginate, defaultPaginateOptions, sortRegex } from '../constants';
 import { isExpressRequest } from '../helpers';
 import type { Request as ExpressRequest } from 'express';
@@ -19,17 +19,14 @@ export const Paginate = createParamDecorator((data: PaginateDataQuery, ctx: Exec
         return paginateQuery;
     }
 
-    const query = request.query as ExtendedPaginateQuery;
+    const query = request.query as Omit<ExtendedPaginateQuery, 'url'>;
 
     // Determine if Express or Fastify to rebuild the original url and reduce down to protocol, host and base url
-    let originalUrl: string;
     if (isExpressRequest(request)) {
-        originalUrl = request.protocol + '://' + request.get('host') + request.originalUrl;
+        paginateQuery.url = new URL(request.protocol + '://' + request.get('host') + request.originalUrl);
     } else {
-        originalUrl = request.protocol + '://' + request.hostname + request.url;
+        paginateQuery.url = new URL(request.protocol + '://' + request.hostname + request.url);
     }
-    const urlParts = new URL(originalUrl);
-    paginateQuery.path = urlParts.protocol + '//' + urlParts.host + urlParts.pathname;
 
     const parsedPageInt = hasParam(query, 'page') ? maybeParseIntParam(query.page) : undefined;
     const page = isSafePositiveInteger(parsedPageInt) ? parsedPageInt : isSafePositiveInteger(defaultPage) ? defaultPage : paginateQuery.currentPage;
@@ -79,7 +76,7 @@ export const Paginate = createParamDecorator((data: PaginateDataQuery, ctx: Exec
             Object.entries(query)
                 .filter(([key]) => key.startsWith('filter.'))
                 .map(([k, v]) => [k.replace('filter.', ''), v])
-        ) as Record<string, string | string[]>;
+        ) as Record<string, unknown>;
     }
 
     return paginateQuery;

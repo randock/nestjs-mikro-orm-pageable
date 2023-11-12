@@ -19,8 +19,8 @@ export type PaginateQuery<T extends Record<string, unknown> = NonNullable<unknow
     totalPages: number;
     totalItems: number;
     sortBy: Sort[];
-    path: string;
-    filter: { [column: string]: string | string[] };
+    url?: URL | undefined;
+    filter: { [column: string]: unknown };
 } & T;
 
 export type ExtendedPaginateQuery = PaginateQuery<{ limit?: number }>;

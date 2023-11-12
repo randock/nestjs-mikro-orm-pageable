@@ -11,20 +11,6 @@ export function isExpressRequest(request: unknown): request is ExpressRequest {
     return isRecord(request) && typeof request.get === 'function';
 }
 
-export function getQueryUrlComponents(path: string): { queryOrigin: string; queryPath: string } {
-    const r = new RegExp('^(?:[a-z+]+:)?//', 'i');
-    let queryOrigin = '';
-    let queryPath = '';
-    if (r.test(path)) {
-        const url = new URL(path);
-        queryOrigin = url.origin;
-        queryPath = url.pathname;
-    } else {
-        queryPath = path;
-    }
-    return { queryOrigin, queryPath };
-}
-
 export function getAlias(property: string): string {
     return property.split('.').pop() ?? property;
 }

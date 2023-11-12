@@ -118,15 +118,9 @@ export function addWhereCondition<T extends object>(qb: QueryBuilder<T>, column:
 
 export function addFilter<T extends object>(qb: QueryBuilder<T>, query: PaginateQuery): QueryBuilder<T> {
     const filter = parseFilter(query);
-
     const filterEntries = Object.entries(filter);
-    const orFilters = filterEntries.filter(([, value]) => value.some((v) => v.comparator === GroupOperator.$or));
-    const andFilters = filterEntries.filter(([, value]) => value.some((v) => v.comparator === GroupOperator.$and));
 
-    orFilters.map(([column]) => {
-        addWhereCondition(qb, column, filter);
-    });
-    andFilters.map(([column]) => {
+    filterEntries.map(([column]) => {
         addWhereCondition(qb, column, filter);
     });
 

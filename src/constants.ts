@@ -8,7 +8,6 @@ export const defaultPaginate: PaginateQuery = {
     totalItems: 0,
     unpaged: false,
     sortBy: [],
-    path: '',
     filter: {}
 };
 
