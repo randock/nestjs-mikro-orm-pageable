@@ -129,6 +129,11 @@ export function fixColumnAlias<T extends object>(properties: ColumnProperties, q
             return `${alias}.${propertyPath[1]}`;
         }
         return `${qb.alias}_${properties.propertyPath}_rel_${properties.propertyName}`;
+    } else if (properties.column.includes('.')) {
+        const aliases = qb['_aliases'];
+        const propertyPath = properties.column.split('.');
+        const alias = Object.keys(aliases).filter((k) => k.toLowerCase() === propertyPath[0])[0];
+        return `${alias}.${propertyPath[1]}`;
     }
 
     return `${qb.alias}.${properties.propertyName}`;
