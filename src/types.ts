@@ -1,5 +1,4 @@
-import { QBFilterQuery, QueryOrder } from '@mikro-orm/core';
-import { GroupOperator, QueryOperator } from '@mikro-orm/core/enums';
+import { GroupOperator, QBFilterQuery, QueryOperator, QueryOrder } from '@mikro-orm/core';
 
 export type DriverName = 'PostgreSqlDriver' | 'MySqlDriver' | 'MariaDbDriver' | 'SqliteDriver';
 
@@ -67,23 +66,13 @@ export type PaginateConfig<T extends object> = {
 export type ColumnProperties = { propertyPath?: string; propertyName: string; isNested: boolean; column: string };
 
 export interface FilterToken {
-    comparator: GroupOperator;
-    suffix?: QueryOperator;
-    operator: QueryOperator;
-    value: string | undefined;
+    comparator: keyof typeof GroupOperator;
+    suffix?: keyof typeof QueryOperator;
+    operator: keyof typeof QueryOperator;
+    value: string | string[] | Date | undefined;
 }
 
-export type FindOperator = {
-    type: string;
-    value: string | string[] | Date;
-};
-
-export type Filter = {
-    comparator: GroupOperator;
-    findOperator: FindOperator | undefined;
-};
-
-export type ColumnsFilters = { [columnName: string]: Filter[] };
+export type ColumnsFilters = { [columnName: string]: FilterToken[] };
 
 export interface PredicateOperator {
     operator: string | undefined;

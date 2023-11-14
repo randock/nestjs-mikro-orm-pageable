@@ -24,7 +24,7 @@ const defaultPageable: PaginateQuery = {
     totalItems: 0,
     unpaged: false,
     sortBy: [],
-    path: "",
+    filter: {}
 };
 
 const pageableFactory = (values?: Partial<PaginateQuery>): PaginateQuery => ({
@@ -121,25 +121,25 @@ describe('PageFactory', () => {
                     sortBy: [
                         {
                             property: 'id',
-                            direction: 'asc',
+                            direction: QueryOrder.asc,
                             nullsFirst: true
                         },
                         {
                             property: 'name',
-                            direction: 'desc',
+                            direction: QueryOrder.desc,
                             nullsFirst: false
                         },
                         {
                             property: 'age',
-                            direction: 'asc'
+                            direction: QueryOrder.asc
                         },
                         {
                             property: 'gender',
-                            direction: 'desc'
+                            direction: QueryOrder.desc
                         },
                         {
                             property: 'notSortable',
-                            direction: 'asc',
+                            direction: QueryOrder.asc,
                             nullsFirst: false
                         }
                     ]

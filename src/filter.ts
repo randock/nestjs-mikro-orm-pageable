@@ -1,119 +1,114 @@
 import { QueryBuilder } from '@mikro-orm/knex';
 import { ColumnsFilters, FilterToken, PaginateQuery } from './types';
-import { QueryOperator, GroupOperator } from '@mikro-orm/core';
-import { createWhereConditionExpression, fixColumnAlias, fixQueryParam, generatePredicateCondition, getPropertiesByColumnName, isISODate } from './helpers';
-
-export function isOperator(value: string): value is QueryOperator {
-    return Object.values(QueryOperator).includes(value as QueryOperator);
-}
-
-export function parseFilterToken(raw?: string): FilterToken | null {
-    if (raw === undefined || raw === null) {
-        return null;
-    }
-
-    const token: FilterToken = {
-        comparator: GroupOperator.$and,
-        suffix: undefined,
-        operator: QueryOperator.$eq,
-        value: raw
-    };
-
-    const MAX_OPERTATOR = 4; // max 4 operator es: $and:$not:$eq:$null
-    const OPERAND_SEPARATOR = ':';
-
-    const matches = raw.split(OPERAND_SEPARATOR);
-    const maxOperandCount = matches.length > MAX_OPERTATOR ? MAX_OPERTATOR : matches.length;
-    const notValue: (GroupOperator | QueryOperator)[] = [];
-
-    for (let i = 0; i < maxOperandCount; i++) {
-        const match = matches[i].replace('$', '');
-        if (match === GroupOperator.$and || match === GroupOperator.$or) {
-            token.comparator = match;
-        } else if (match === QueryOperator.$not) {
-            token.suffix = match;
-        } else if (isOperator(match)) {
-            token.operator = match;
-        } else {
-            break;
-        }
-        notValue.push(match);
-    }
-
-    if (notValue.length) {
-        token.value = token.operator !== QueryOperator.$exists ? raw.replace(`${notValue.join(OPERAND_SEPARATOR)}${OPERAND_SEPARATOR}`, '').replace('$', '') : undefined;
-    }
-
-    return token;
-}
+import { GroupOperator, QBFilterQuery, QueryOperator } from '@mikro-orm/core';
+import { fixColumnAlias, getKeyByValue, getPropertiesByColumnName, isISODate } from './helpers';
 
 export function parseFilter(query: PaginateQuery): ColumnsFilters {
     if (!query.filter) {
         return {};
     }
 
+    const MAX_OPERATOR = 4; // eg: $and:$not:$eq:$null
+    const OPERAND_SEPARATOR = ':';
+
     const filters: ColumnsFilters = {};
     Object.keys(query.filter).map((column) => {
         const input = query.filter[column];
         const statements = !Array.isArray(input) ? [input] : input;
         statements.map((raw) => {
-            const token = parseFilterToken(raw);
-            if (!token) {
-                return;
+            if (raw === undefined || raw === null) {
+                return null;
             }
 
-            const params: (typeof filters)[0][0] = {
-                comparator: token.comparator,
-                findOperator: undefined
+            const token: FilterToken = {
+                comparator: getKeyByValue(GroupOperator, GroupOperator.$and),
+                suffix: undefined,
+                operator: getKeyByValue(QueryOperator, QueryOperator.$eq),
+                value: undefined
             };
 
-            const fixValue = (value: string) => (isISODate(value) ? new Date(value) : value);
+            const matches = raw.split(OPERAND_SEPARATOR);
+            const maxOperandCount = matches.length > MAX_OPERATOR ? MAX_OPERATOR : matches.length;
 
-            switch (token.operator) {
-                case QueryOperator.$in:
-                case QueryOperator.$contains:
-                    params.findOperator = {
-                        type: token.operator,
-                        value: token.value?.split(',') as string[]
-                    };
-                    break;
-                case QueryOperator.$ilike:
-                    params.findOperator = {
-                        type: token.operator,
-                        value: `%${token.value}%`
-                    };
-                    break;
-                default:
-                    params.findOperator = {
-                        type: token.operator,
-                        value: fixValue(token.value as string)
-                    };
-                    break;
+            for (let i = 0; i < maxOperandCount; i++) {
+                // Is operator
+                if (matches[i].startsWith('$')) {
+                    // Suffix operator $not
+                    if (matches[i] === getKeyByValue(QueryOperator, QueryOperator.$not)) {
+                        token.suffix = matches[i] as keyof typeof QueryOperator;
+                    }
+                    // Is GroupOperator
+                    else if (Object.keys(GroupOperator).includes(matches[i])) {
+                        token.comparator = matches[i] as keyof typeof GroupOperator;
+                    }
+                    // Is QueryOperator
+                    else if (Object.keys(QueryOperator).includes(matches[i])) {
+                        token.operator = matches[i] as keyof typeof QueryOperator;
+                    }
+                } else {
+                    const fixValue = (value: string) => (isISODate(value) ? new Date(value) : value);
+                    switch (QueryOperator[token.operator]) {
+                        case QueryOperator.$in:
+                        case QueryOperator.$contains:
+                            token.value = matches[i]?.split(',') as string[];
+                            break;
+                        case QueryOperator.$ilike:
+                            token.value = `%${matches[i]}%`;
+                            break;
+                        default:
+                            token.value = fixValue(matches[i] as string);
+                            break;
+                    }
+                }
             }
-            filters[column] = [...(filters[column] || []), params];
+
+            filters[column] = [...(filters[column] || []), token];
         });
     });
 
     return filters;
 }
 
-export function addWhereCondition<T extends object>(qb: QueryBuilder<T>, column: string, filter: ColumnsFilters) {
+export function addWhereCondition<T extends object>(qb: QueryBuilder<T>, column: string, filter: ColumnsFilters): QBFilterQuery<T> {
     const columnProperties = getPropertiesByColumnName(column);
-    const alias = fixColumnAlias(columnProperties, qb);
+    const alias = fixColumnAlias(columnProperties, qb as any);
+    const filterQuery: QBFilterQuery<T> = {};
 
-    filter[column].map((columnFilter, index) => {
-        const columnNamePerIteration = `${columnProperties.column}.${index}`;
-        const condition = generatePredicateCondition(columnFilter, alias);
-        const parameters = fixQueryParam(alias, columnNamePerIteration, condition, {
-            [columnNamePerIteration]: columnFilter.findOperator?.value
+    if (!columnProperties.isNested) {
+        const logicalOperator = filter[column].some(({ comparator }) => comparator === '$or') ? '$or' : '$and';
+        qb.andWhere({
+            [logicalOperator]: [
+                ...filter[column].map((columnFilter) => {
+                    if (columnFilter.suffix) {
+                        return {
+                            [alias]: {
+                                [columnFilter.suffix]: {
+                                    [columnFilter.operator]: columnFilter.value
+                                }
+                            }
+                        };
+                    }
+                    return { [alias]: { [columnFilter.operator]: columnFilter.value } };
+                })
+            ]
         });
+    } else {
+        // TODO: sub-query like `where "Genre"."id" in (SELECT id FROM "Genre" WHERE "Genre".slug = 'techno' OR "Genre".slug = 'trance')`
+        // const em = (qb as any).em as EntityManager;
+        // const qb2 = em.createQueryBuilder("Genre");
+        // qb2.select("id").andWhere({
+        //   $or: [
+        //     ...filter[column].map((columnFilter) => {
+        //       return { [alias]: { [columnFilter.operator]: columnFilter.value } };
+        //     }),
+        //   ],
+        // });
+        //
+        // qb.andWhere({ "Genre.id": { $in: qb2.getKnexQuery() } });
+        // console.log(qb.getQuery());
+    }
 
-        if (columnFilter.comparator === GroupOperator.$or) {
-            qb.orWhere(createWhereConditionExpression(condition, parameters[columnNamePerIteration]));
-        } else {
-            qb.andWhere(createWhereConditionExpression(condition, parameters[columnNamePerIteration]));
-        }
-    });
+    return filterQuery;
 }
 
 export function addFilter<T extends object>(qb: QueryBuilder<T>, query: PaginateQuery): QueryBuilder<T> {
