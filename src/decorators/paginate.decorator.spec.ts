@@ -9,6 +9,7 @@ function getParamDecoratorFactory<TData, TOutput>(decorator: Function): CustomPa
     class Test {
         public test(@decorator() _value: TOutput): void {}
     }
+
     const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
     return args[Object.keys(args)[0]].factory;
 }
@@ -27,13 +28,13 @@ function contextFactory(query: unknown) {
 
 const defaultPageable: PaginateQuery = {
     currentPage: 1,
-    size: 10,
+    itemsPerPage: 10,
     offset: 0,
     totalPages: 0,
     totalItems: 0,
     unpaged: false,
     sortBy: [],
-    path: ""
+    filter: {}
 };
 
 describe('PageableDefault', () => {
@@ -42,7 +43,7 @@ describe('PageableDefault', () => {
         const pageable = decoratorFactory({}, context);
         expect(pageable).toEqual({
             currentPage: 1,
-            size: 10,
+            itemsPerPage: 10,
             offset: 0,
             totalPages: 0,
             totalItems: 0,
@@ -55,7 +56,7 @@ describe('PageableDefault', () => {
         const pageable = decoratorFactory(
             {
                 currentPage: 1,
-                size: 20,
+                itemsPerPage: 20,
                 unpaged: true,
                 sortBy: [
                     {
@@ -69,7 +70,7 @@ describe('PageableDefault', () => {
         );
         expect(pageable).toEqual({
             currentPage: 1,
-            size: 20,
+            itemsPerPage: 20,
             offset: 0,
             totalPages: 0,
             totalItems: 0,
@@ -87,12 +88,12 @@ describe('PageableDefault', () => {
         {
             query: {
                 page: '1',
-                size: '20',
+                itemsPerPage: '20',
                 sortBy: 'property[test];direction[asc];nulls-first[true]'
             },
             expected: {
                 currentPage: 1,
-                size: 20,
+                itemsPerPage: 20,
                 offset: 0,
                 totalPages: 0,
                 totalItems: 0,
@@ -109,12 +110,12 @@ describe('PageableDefault', () => {
         {
             query: {
                 page: '2',
-                size: '4',
+                itemsPerPage: '4',
                 sortBy: ['property[test];direction[asc];nulls-first[true]', 'property[@!*#-test2];direction[desc];nulls-first[false]', 'property[_test 3_];direction[asc]']
             },
             expected: {
                 currentPage: 2,
-                size: 4,
+                itemsPerPage: 4,
                 offset: 4,
                 totalPages: 0,
                 totalItems: 0,
@@ -147,7 +148,7 @@ describe('PageableDefault', () => {
             {
                 defaultValues: {
                     currentPage: 1,
-                    size: -20,
+                    itemsPerPage: -20,
                     unpaged: true,
                     sortBy: []
                 },
@@ -161,13 +162,13 @@ describe('PageableDefault', () => {
             {
                 defaultValues: {
                     currentPage: -1,
-                    size: 20,
+                    itemsPerPage: 20,
                     unpaged: false,
                     sortBy: []
                 },
                 expected: {
                     ...defaultPageable,
-                    size: 20
+                    itemsPerPage: 20
                 }
             },
             {
@@ -180,7 +181,7 @@ describe('PageableDefault', () => {
             },
             {
                 defaultValues: {
-                    size: DEFAULT_MAX_SIZE + 1
+                    itemsPerPage: DEFAULT_MAX_SIZE + 1
                 },
                 expected: {
                     ...defaultPageable
@@ -189,7 +190,7 @@ describe('PageableDefault', () => {
             {
                 defaultValues: {
                     currentPage: Math.floor(Number.MAX_SAFE_INTEGER / 2),
-                    size: 3
+                    itemsPerPage: 3
                 },
                 expected: {
                     ...defaultPageable
@@ -198,7 +199,7 @@ describe('PageableDefault', () => {
             {
                 defaultValues: {
                     currentPage: 0.1234567,
-                    size: 9.87654321
+                    itemsPerPage: 9.87654321
                 },
                 expected: {
                     ...defaultPageable
@@ -213,7 +214,7 @@ describe('PageableDefault', () => {
             {
                 query: {
                     page: '1',
-                    size: '-20',
+                    itemsPerPage: '-20',
                     unpaged: 'abc'
                 },
                 expected: {
@@ -223,18 +224,18 @@ describe('PageableDefault', () => {
             {
                 query: {
                     page: '-1',
-                    size: '20',
+                    itemsPerPage: '20',
                     sortBy: 'property[test];direction[xyz];nulls-first[true]'
                 },
                 expected: {
                     ...defaultPageable,
-                    size: 20
+                    itemsPerPage: 20
                 }
             },
             {
                 query: {
                     page: 'abc',
-                    size: 'xyz',
+                    itemsPerPage: 'xyz',
                     sortBy: 'property[a.b];direction[asc];nulls-first[true]'
                 },
                 expected: {
@@ -258,7 +259,7 @@ describe('PageableDefault', () => {
             },
             {
                 query: {
-                    size: `${Number.MAX_SAFE_INTEGER + 1}`
+                    itemsPerPage: `${Number.MAX_SAFE_INTEGER + 1}`
                 },
                 expected: {
                     ...defaultPageable
@@ -267,7 +268,7 @@ describe('PageableDefault', () => {
             {
                 query: {
                     page: `${Math.floor(Number.MAX_SAFE_INTEGER / 2)}`,
-                    size: '3'
+                    itemsPerPage: '3'
                 },
                 expected: {
                     ...defaultPageable

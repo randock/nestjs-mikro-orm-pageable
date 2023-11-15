@@ -12,7 +12,7 @@ export interface Links {
 
 export type PaginateQuery<T extends Record<string, unknown> = NonNullable<unknown>> = {
     currentPage: number;
-    size: number;
+    itemsPerPage: number;
     offset: number;
     unpaged: boolean;
     totalPages: number;

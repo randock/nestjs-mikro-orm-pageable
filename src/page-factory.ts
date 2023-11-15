@@ -41,7 +41,7 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
         if (this.query.unpaged) {
             this.query.currentPage = 0;
             this.query.offset = 0;
-            this.query.size = 0;
+            this.query.itemsPerPage = 0;
         }
 
         if (undefined !== select) {
@@ -75,16 +75,16 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
         // queryBuilder.orderBy(getQBQueryOrderMap(sortBy, this.driverName));
 
         if (!this.query.unpaged) {
-            const difference = this.query.offset + this.query.size - totalItems;
-            queryBuilder.offset(this.query.offset).limit(this.query.size - (difference > 0 ? difference : 0));
+            const difference = this.query.offset + this.query.itemsPerPage - totalItems;
+            queryBuilder.offset(this.query.offset).limit(this.query.itemsPerPage - (difference > 0 ? difference : 0));
         }
 
         const result = await queryBuilder.getResultList();
         const data = result.map(this._map);
-        const totalPages = Math.ceil(totalItems / this.query.size);
+        const totalPages = Math.ceil(totalItems / this.query.itemsPerPage);
 
         const url: URL = this.query.url as URL;
-        url.searchParams.set('limit', this.query.size.toString());
+        url.searchParams.set('limit', this.query.itemsPerPage.toString());
         const buildLink = (p: number): string => {
             url.searchParams.set('page', p.toString());
             return url.toString();
@@ -95,7 +95,7 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
             meta: {
                 currentPage: this.query.currentPage,
                 offset: this.query.offset,
-                size: this.query.size,
+                itemsPerPage: this.query.itemsPerPage,
                 unpaged: this.query.unpaged,
                 totalPages,
                 totalItems,

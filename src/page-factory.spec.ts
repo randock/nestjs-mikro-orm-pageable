@@ -18,7 +18,7 @@ type QbTestMethodMap = {
 
 const defaultPageable: PaginateQuery = {
     currentPage: 0,
-    size: 10,
+    itemsPerPage: 10,
     offset: 0,
     totalPages: 0,
     totalItems: 0,
@@ -86,7 +86,7 @@ describe('PageFactory', () => {
                 });
                 const pageable = pageableFactory({
                     currentPage: 1,
-                    size: 5,
+                    itemsPerPage: 5,
                     offset: 5
                 });
                 const page = await new PageFactory(pageable, mockRepo).create();

@@ -5,15 +5,17 @@ import { ApplicationModule } from './src/app.module';
 import { PaginateQuery, Sort } from '../src';
 import { makeTestData } from './src/testData';
 import { TestDto } from './src/test.dto';
+import { QueryOrder } from '@mikro-orm/core';
 
 const defaultPageable: PaginateQuery = {
     currentPage: 1,
     offset: 0,
-    size: 10,
+    itemsPerPage: 10,
     unpaged: false,
     totalPages: 100,
     totalItems: 1000,
-    sortBy: []
+    sortBy: [],
+    filter: {},
 };
 
 describe('pageable', () => {
@@ -97,7 +99,7 @@ describe('pageable', () => {
                 data: testData.slice(0, 1).map((t) => serialize(t)),
                 meta: {
                     ...defaultPageable,
-                    size: 1,
+                    itemsPerPage: 1,
                     totalPages: 1000
                 },
                 links: {
@@ -114,7 +116,7 @@ describe('pageable', () => {
                 .get('/test?sortBy=property[id];direction[desc];')
                 .expect(200)
                 .expect({
-                    data: sortBy(testData, [{ property: 'id', direction: 'desc' }])
+                    data: sortBy(testData, [{ property: 'id', direction: QueryOrder.desc }])
                         .slice(0, 10)
                         .map((t) => serialize(t)),
                     meta: {
@@ -122,7 +124,7 @@ describe('pageable', () => {
                         sortBy: [
                             {
                                 property: 'id',
-                                direction: 'desc'
+                                direction: QueryOrder.desc
                             }
                         ]
                     },
@@ -139,7 +141,7 @@ describe('pageable', () => {
                 .get('/test?sortBy=property[description];direction[desc];nulls-first[true];')
                 .expect(200)
                 .expect({
-                    data: sortBy(testData, [{ property: 'description', direction: 'desc', nullsFirst: true }])
+                    data: sortBy(testData, [{ property: 'description', direction: QueryOrder.desc, nullsFirst: true }])
                         .slice(0, 10)
                         .map((t) => serialize(t)),
                     meta: {
@@ -147,7 +149,7 @@ describe('pageable', () => {
                         sortBy: [
                             {
                                 property: 'description',
-                                direction: 'desc',
+                                direction: QueryOrder.desc,
                                 nullsFirst: true
                             }
                         ]
@@ -166,8 +168,8 @@ describe('pageable', () => {
                 .expect(200)
                 .expect({
                     data: sortBy(testData, [
-                        { property: 'description', direction: 'desc', nullsFirst: false },
-                        { property: 'id', direction: 'asc' }
+                        { property: 'description', direction: QueryOrder.desc, nullsFirst: false },
+                        { property: 'id', direction: QueryOrder.asc }
                     ])
                         .slice(0, 10)
                         .map((t) => serialize(t)),
@@ -176,12 +178,12 @@ describe('pageable', () => {
                         sortBy: [
                             {
                                 property: 'description',
-                                direction: 'desc',
+                                direction: QueryOrder.desc,
                                 nullsFirst: false
                             },
                             {
                                 property: 'id',
-                                direction: 'asc'
+                                direction: QueryOrder.asc
                             }
                         ]
                     },
@@ -235,7 +237,7 @@ describe('pageable', () => {
                     meta: {
                         ...defaultPageable,
                         currentPage: 0,
-                        size: 0,
+                        itemsPerPage: 0,
                         totalPages: null,
                         unpaged: true
                     },
@@ -298,7 +300,7 @@ describe('pageable', () => {
                     data: testData.slice(0, 5).map((t) => serialize(t)),
                     meta: {
                         ...defaultPageable,
-                        size: 5,
+                        itemsPerPage: 5,
                         totalPages: 200
                     },
                     links: {
@@ -339,7 +341,7 @@ function sortBy(testDtos: TestDto[], sorts: Sort[]) {
                 if (bProp === null) {
                     return sorts[i].nullsFirst ? 1 : -1;
                 }
-                if (sorts[i].direction === 'asc') {
+                if (sorts[i].direction === QueryOrder.asc) {
                     return aProp < bProp ? -1 : 1;
                 }
                 return aProp > bProp ? -1 : 1;

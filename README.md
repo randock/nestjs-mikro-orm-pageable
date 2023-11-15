@@ -108,7 +108,7 @@ An example of the response shape is shown as below:
     "totalItems": 1,
     "currentPage": 1,
     "totalPages": 1,
-    "size": 10,
+    "itemsPerPage": 10,
     "offset": 0,
     "sort": [
       {

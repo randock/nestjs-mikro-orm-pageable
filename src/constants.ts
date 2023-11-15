@@ -2,7 +2,7 @@ import { PaginateOptions, PaginateQuery } from './types';
 
 export const defaultPaginate: PaginateQuery = {
     currentPage: 1,
-    size: 10,
+    itemsPerPage: 10,
     offset: 0,
     totalPages: 0,
     totalItems: 0,
