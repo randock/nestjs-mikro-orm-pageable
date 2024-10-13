@@ -1,7 +1,7 @@
 import { EntityRepository, QueryBuilder } from '@mikro-orm/knex';
 import { Dictionary } from '@mikro-orm/core';
 import { DriverName, ExtendedPaginateQuery, PaginateConfig, Paginated, Relation } from './types';
-import { getAlias } from './helpers';
+import { getAlias, getQBQueryOrderMap } from './helpers';
 import { addFilter } from './filter';
 
 export class PageFactory<TEntity extends object, TOutput extends object = TEntity, TPage = Paginated<TOutput>> {
@@ -13,7 +13,7 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
         query: ExtendedPaginateQuery,
         protected repo: EntityRepository<TEntity> | QueryBuilder<TEntity>,
         protected _config: PaginateConfig<TEntity> = {},
-        protected _map: (entity: TEntity & Dictionary) => TOutput & Dictionary = (entity) => entity as unknown as TOutput & Dictionary
+        protected _map: (entity: TEntity & Dictionary) => (TOutput & Dictionary) | Promise<TOutput & Dictionary> = (entity) => entity as unknown as TOutput & Dictionary
     ) {
         this.query = query;
         if (this.repo.constructor.name === 'QueryBuilder') {
@@ -36,7 +36,7 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
 
     public async create(): Promise<TPage> {
         const { select, sortable, relations, where, alias } = this._config;
-        const queryBuilder: QueryBuilder<TEntity> = this.isEntityRepository ? (this.repo as EntityRepository<TEntity>).createQueryBuilder(alias) : (this.repo as QueryBuilder<TEntity>);
+        let queryBuilder: QueryBuilder<TEntity> = this.isEntityRepository ? (this.repo as EntityRepository<TEntity>).createQueryBuilder(alias) : (this.repo as QueryBuilder<TEntity>);
 
         if (this.query.unpaged) {
             this.query.currentPage = 0;
@@ -46,16 +46,30 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
 
         if (undefined !== select) {
             queryBuilder.select(select);
+        } else {
+            queryBuilder.select('*');
         }
 
         const applyRelation = (relation: Relation) => {
-            queryBuilder[relation.andSelect ? 'joinAndSelect' : 'join'](relation.property, relation.alias ?? getAlias(relation.property), relation.cond, relation.type, relation.path);
+            if (!relation.andSelect) {
+                if (relation.type === 'leftJoin') {
+                    queryBuilder.leftJoin(relation.property, relation.alias ?? getAlias(relation.property), relation.cond);
+                } else {
+                    queryBuilder.join(relation.property, relation.alias ?? getAlias(relation.property), relation.cond);
+                }
+            } else {
+                if (relation.type === 'leftJoin') {
+                    queryBuilder.leftJoinAndSelect(relation.property, relation.alias ?? getAlias(relation.property), relation.cond);
+                } else {
+                    queryBuilder.joinAndSelect(relation.property, relation.alias ?? getAlias(relation.property), relation.cond);
+                }
+            }
         };
 
         Array.isArray(relations) ? relations.forEach(applyRelation) : relations && applyRelation(relations);
 
         if (where) {
-            queryBuilder.where(where);
+            queryBuilder.andWhere(where);
         }
 
         if (Object.keys(this.query.filter).length) {
@@ -63,6 +77,7 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
         }
 
         let totalItems = await queryBuilder.getCount();
+        queryBuilder = queryBuilder.clone();
 
         if (this.query.limit !== undefined) {
             queryBuilder.limit(this.query.limit);
@@ -71,8 +86,8 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
 
         this.query.sortBy = this.query.sortBy.filter((s) => sortable?.includes(s.property) ?? true);
 
-        // TODO: This is generating an issue when using query builder, it order not correctly
-        // queryBuilder.orderBy(getQBQueryOrderMap(sortBy, this.driverName));
+        // sort
+        queryBuilder.orderBy(getQBQueryOrderMap(this.query.sortBy, this.driverName));
 
         if (!this.query.unpaged) {
             const difference = this.query.offset + this.query.itemsPerPage - totalItems;
@@ -80,7 +95,12 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
         }
 
         const result = await queryBuilder.getResultList();
-        const data = result.map(this._map);
+
+        const data = [];
+        for (const row of result) {
+            data.push(await this._map(row));
+        }
+
         const totalPages = Math.ceil(totalItems / this.query.itemsPerPage);
 
         const url: URL = this.query.url as URL;

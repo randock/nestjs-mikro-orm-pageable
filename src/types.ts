@@ -42,8 +42,8 @@ export type PaginateDataQuery = Partial<Omit<PaginateQuery, 'offset' | 'totalPag
 
 export type Relation = {
     property: string;
-    type?: 'leftJoin' | 'innerJoin' | 'pivotJoin';
     alias?: string;
+    type?: 'leftJoin' | 'innerJoin' | 'pivotJoin';
     andSelect?: boolean;
     cond?: QBFilterQuery;
     path?: string;

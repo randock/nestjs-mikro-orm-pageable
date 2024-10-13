@@ -169,7 +169,7 @@ describe('PageFactory', () => {
                             },
                             {
                                 property: 'b',
-                                type: 'innerJoin'
+                                type: 'leftJoin'
                             },
                             {
                                 property: 'b.c',
@@ -181,7 +181,7 @@ describe('PageFactory', () => {
                     })
                     .create();
                 expect(qbTestMethodMap.join).toHaveBeenCalledWith('a', 'a', undefined, undefined, undefined);
-                expect(qbTestMethodMap.join).toHaveBeenCalledWith('b', 'b', undefined, 'innerJoin', undefined);
+                expect(qbTestMethodMap.join).toHaveBeenCalledWith('b', 'b', undefined, 'leftJoin', undefined);
                 expect(qbTestMethodMap.join).toHaveBeenCalledWith('b.c', 'cAlias', 'b.id = c.id', undefined, 'b.c');
             });
         });

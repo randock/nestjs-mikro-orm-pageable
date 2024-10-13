@@ -59,7 +59,6 @@ export const Paginate = createParamDecorator((data: PaginateDataQuery, ctx: Exec
             paginateQuery.sortBy = parsedSort;
         }
     }
-
     if (enableUnpaged && hasParam(query, 'unpaged')) {
         const parsedBool = maybeParseBoolParam(query.unpaged);
         if (parsedBool !== undefined) {
@@ -71,12 +70,8 @@ export const Paginate = createParamDecorator((data: PaginateDataQuery, ctx: Exec
         paginateQuery.limit = limit;
     }
 
-    if (Object.keys(query).some((k) => k.startsWith('filter.'))) {
-        paginateQuery.filter = Object.fromEntries(
-            Object.entries(query)
-                .filter(([key]) => key.startsWith('filter.'))
-                .map(([k, v]) => [k.replace('filter.', ''), v])
-        ) as Record<string, unknown>;
+    if (hasParam(query, 'filter')) {
+        paginateQuery.filter = query.filter;
     }
 
     return paginateQuery;
