@@ -45,9 +45,9 @@ export class PageFactory<TEntity extends object, TOutput extends object = TEntit
         }
 
         if (undefined !== select) {
-            queryBuilder.select(select);
+            queryBuilder.addSelect(select);
         } else {
-            queryBuilder.select('*');
+            queryBuilder.addSelect('*');
         }
 
         const applyRelation = (relation: Relation) => {

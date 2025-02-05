@@ -9,7 +9,7 @@ export class PaginateResponse<T extends object> implements Paginated<T> {
     @ApiProperty({
         type: 'object',
         properties: {
-            page: { type: 'integer', minimum: 0 },
+            currentPage: { type: 'integer', minimum: 0 },
             itemsPerPage: { type: 'integer', minimum: 0 },
             offset: { type: 'integer', minimum: 0 },
             unpaged: { type: 'boolean' },
