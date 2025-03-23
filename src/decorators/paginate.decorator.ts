@@ -11,8 +11,8 @@ export const Paginate = createParamDecorator((data: PaginateDataQuery, ctx: Exec
     const request: ExpressRequest | FastifyRequest = ctx.switchToHttp().getRequest();
 
     const paginateQuery: ExtendedPaginateQuery = {
-        ...defaultPaginate,
-        ...defaultData
+        ...JSON.parse(JSON.stringify(defaultPaginate)),
+        ...JSON.parse(JSON.stringify(defaultData))
     };
 
     if (!hasQuery(request)) {
